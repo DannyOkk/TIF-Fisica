@@ -34,6 +34,9 @@ class Simulador:
         self.historico_momentos: List[float] = []
         self.historico_energias: List[float] = []
         self.historico_posiciones: List[List[np.ndarray]] = []  # Posiciones por paso
+        # Variables termodinámicas macroscópicas
+        self.presion_actual: float = 0.0
+        self.impulso_pared_acumulado: float = 0.0
     
     def agregar_particula(
         self,
@@ -66,6 +69,11 @@ class Simulador:
     def calcular_energia_total(self) -> float:
         """Retorna energía cinética total."""
         return sum(p.calcular_energia_cinetica() for p in self.particulas)
+
+    def escalar_velocidades(self, factor: float) -> None:
+        """Escala todas las velocidades por un factor (calentamiento/enfriamiento)."""
+        for p in self.particulas:
+            p.velocidad *= factor
     
     def paso_simulacion(self) -> None:
         """Ejecuta un paso: cinemática → colisiones → límites → registro."""
@@ -79,10 +87,14 @@ class Simulador:
                 if MotorFisico.detectar_colision(self.particulas[i], self.particulas[j]):
                     MotorFisico.resolver_colision(self.particulas[i], self.particulas[j])
         
-        # 3. Resolver colisiones con fronteras
+        # 3. Resolver colisiones con fronteras y acumular impulso
+        # Acumulador de impulso transferido a las paredes en este paso
+        self.impulso_pared_acumulado = 0.0
         for p in self.particulas:
             if self.contenedor.detectar_colision_frontera(p):
-                self.contenedor.resolver_colision_frontera(p)
+                self.impulso_pared_acumulado += self.contenedor.resolver_colision_frontera(p)
+        # Presión macroscópica instantánea: P = (impulso / dt) / perímetro
+        self.presion_actual = self.impulso_pared_acumulado / (self.dt * self.contenedor.perimetro)
         
         # 4. Registrar magnitudes
         self.historico_momentos.append(self.calcular_momento_total())
@@ -102,19 +114,17 @@ class Simulador:
         self.historico_momentos.clear()
         self.historico_energias.clear()
         self.historico_posiciones.clear()
+        self.presion_actual = 0.0
+        self.impulso_pared_acumulado = 0.0
         
-        for _ in range(num_pasos):
-            self.paso_simulacion()
-        
-        # Visualizar con animación solo si se solicita (no en servidor web)
         if mostrar:
+            # Modo en vivo: simula y renderiza en el mismo loop para habilitar interacción
             self.visualizador.crear_figura()
-            self.visualizador.animar(
-                self.particulas,
-                self.historico_posiciones,
-                self.historico_momentos,
-                self.historico_energias
-            )
+            self.visualizador.animar_en_vivo(self, num_pasos)
+        else:
+            # Modo batch: solo calcula sin visualizar
+            for _ in range(num_pasos):
+                self.paso_simulacion()
     
     def limpiar(self) -> None:
         """Limpia partículas y datos de simulación anterior."""
@@ -123,3 +133,5 @@ class Simulador:
         self.historico_momentos.clear()
         self.historico_energias.clear()
         self.historico_posiciones.clear()
+        self.presion_actual = 0.0
+        self.impulso_pared_acumulado = 0.0

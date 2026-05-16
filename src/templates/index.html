@@ -388,8 +388,58 @@
             currentFrame: 0,
             playing: false,
             speed: 1.0,
-            interval: null
+            playToken: 0
         };
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        const frameCache = new Map();
+        const frameInFlight = new Map();
+
+        function cacheSet(frameNum, data) {
+            frameCache.set(frameNum, data);
+            if (frameCache.size > 20) {
+                const keys = Array.from(frameCache.keys()).sort((a, b) => a - b);
+                while (frameCache.size > 20 && keys.length) {
+                    const key = keys.shift();
+                    if (key !== currentSim.currentFrame) {
+                        frameCache.delete(key);
+                    }
+                }
+            }
+        }
+
+        async function fetchFrame(frameNum) {
+            if (frameNum < 0 || frameNum >= currentSim.totalFrames) {
+                return null;
+            }
+            if (frameCache.has(frameNum)) {
+                return frameCache.get(frameNum);
+            }
+            if (frameInFlight.has(frameNum)) {
+                return frameInFlight.get(frameNum);
+            }
+
+            const requestPromise = (async () => {
+                const response = await fetch(`/api/frame/${frameNum}`);
+                const data = await response.json();
+                if (response.ok) {
+                    cacheSet(frameNum, data);
+                    return data;
+                }
+                return { error: data.error || 'Error al mostrar frame' };
+            })();
+
+            frameInFlight.set(frameNum, requestPromise);
+            try {
+                return await requestPromise;
+            } finally {
+                frameInFlight.delete(frameNum);
+            }
+        }
+
 
         // Cargar lista de escenarios al iniciar
         async function cargarEscenarios() {
@@ -441,6 +491,8 @@
                 currentSim.totalFrames = data.total_frames;
                 currentSim.currentFrame = 0;
                 currentSim.playing = false;
+                frameCache.clear();
+                frameInFlight.clear();
 
                 document.getElementById('titulo').textContent = data.nombre;
                 document.getElementById('descripcion').textContent = data.descripcion;
@@ -466,53 +518,73 @@
             }
 
             try {
-                document.getElementById('videoFrame').classList.add('loading');
-                document.getElementById('videoFrame').innerHTML = '<div class="loading-spinner"></div>';
+                const videoFrame = document.getElementById('videoFrame');
+                const shouldShowLoader = !videoFrame.querySelector('img');
+                if (shouldShowLoader) {
+                    videoFrame.classList.add('loading');
+                    videoFrame.innerHTML = '<div class="loading-spinner"></div>';
+                }
                 
-                const response = await fetch(`/api/frame/${frameNum}`);
-                const data = await response.json();
+                const safeFrame = Math.max(0, Math.min(frameNum, currentSim.totalFrames - 1));
+                let data = frameCache.get(safeFrame);
+                if (!data) {
+                    data = await fetchFrame(safeFrame);
+                }
 
-                if (!response.ok) {
-                    mostrarError(data.error || 'Error al mostrar frame');
-                    document.getElementById('videoFrame').classList.remove('loading');
-                    document.getElementById('videoFrame').innerHTML = '<span style="color: #f44336;">Error al cargar frame</span>';
+                if (!data || data.error) {
+                    mostrarError(data && data.error ? data.error : 'Error al mostrar frame');
+                    videoFrame.classList.remove('loading');
+                    videoFrame.innerHTML = '<span style="color: #f44336;">Error al cargar frame</span>';
                     return;
                 }
 
-                document.getElementById('videoFrame').classList.remove('loading');
-                document.getElementById('videoFrame').innerHTML = `<img src="data:image/png;base64,${data.image}" alt="Frame ${frameNum}">`;
+                videoFrame.classList.remove('loading');
+                const existingImg = videoFrame.querySelector('img');
+                const newImg = new Image();
+                newImg.alt = `Frame ${frameNum}`;
+                newImg.onload = () => {
+                    if (existingImg) {
+                        videoFrame.replaceChild(newImg, existingImg);
+                    } else {
+                        videoFrame.innerHTML = '';
+                        videoFrame.appendChild(newImg);
+                    }
+                };
+                newImg.src = `data:image/png;base64,${data.image}`;
 
                 currentSim.currentFrame = data.frame;
                 document.getElementById('frameValue').textContent = `${data.frame + 1} / ${data.total}`;
                 document.getElementById('frameSlider').value = data.frame;
                 document.getElementById('statFrame').textContent = data.frame + 1;
+
             } catch (error) {
                 mostrarError('Error al mostrar frame: ' + error.message);
-                document.getElementById('videoFrame').classList.remove('loading');
-                document.getElementById('videoFrame').innerHTML = `<span style="color: #f44336;">${error.message}</span>`;
+                const videoFrame = document.getElementById('videoFrame');
+                videoFrame.classList.remove('loading');
+                videoFrame.innerHTML = `<span style="color: #f44336;">${error.message}</span>`;
             }
         }
 
-        function reproducir() {
-            if (!currentSim.loaded) return;
+        async function reproducir() {
+            if (!currentSim.loaded || currentSim.playing) return;
             currentSim.playing = true;
+            const token = ++currentSim.playToken;
 
-            if (currentSim.interval) clearInterval(currentSim.interval);
-
-            currentSim.interval = setInterval(async () => {
-                if (currentSim.currentFrame < currentSim.totalFrames - 1) {
-                    await mostrarFrame(currentSim.currentFrame + 1);
-                } else {
+            while (currentSim.playing && token === currentSim.playToken) {
+                if (currentSim.currentFrame >= currentSim.totalFrames - 1) {
                     currentSim.playing = false;
-                    clearInterval(currentSim.interval);
                     mostrarMensaje('✓ Simulación completada', 'success');
+                    break;
                 }
-            }, 50 / currentSim.speed);
+
+                await mostrarFrame(currentSim.currentFrame + 1);
+                await sleep(50 / currentSim.speed);
+            }
         }
 
         function pausar() {
             currentSim.playing = false;
-            if (currentSim.interval) clearInterval(currentSim.interval);
+            currentSim.playToken += 1;
         }
 
         async function siguiente() {

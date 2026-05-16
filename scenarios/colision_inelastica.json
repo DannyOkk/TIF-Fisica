@@ -1,0 +1,28 @@
+{
+  "nombre": "Colisión Inelástica",
+  "descripcion": "Masas diferentes, coeficiente de restitución parcial e=0.6. Momento se conserva, energía disminuye.",
+  "dt": 0.01,
+  "ancho_dominio": 10.0,
+  "alto_dominio": 10.0,
+  "coef_restitution_pared": 0.9,
+  "pasos": 300,
+  "particulas": [
+    {
+      "posicion": [2.0, 5.0],
+      "velocidad": [4.0, 0.0],
+      "masa": 2.0,
+      "radio": 0.5,
+      "e": 0.6,
+      "color": "red"
+    },
+    {
+      "posicion": [8.0, 5.0],
+      "velocidad": [-1.0, 0.0],
+      "masa": 1.0,
+      "radio": 0.5,
+      "e": 0.6,
+      "color": "blue"
+    }
+  ],
+  "prediccion": "Momento constante, energía cinética disminuye por inelasticidad."
+}

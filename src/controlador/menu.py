@@ -1,7 +1,9 @@
 """Menú principal: interfaz de usuario interactiva."""
 
 import numpy as np
+import json
 from typing import List, Tuple
+from pathlib import Path
 from src.modelo.contenedor import Contenedor
 from src.controlador import Simulador
 
@@ -28,6 +30,75 @@ class Menu:
             ancho_dominio=10.0,
             alto_dominio=10.0
         )
+    
+    def _cargar_escenario_json(self, archivo_json: str) -> None:
+        """Carga escenario desde archivo JSON.
+        
+        Formato JSON esperado:
+        {
+          "nombre": "Nombre del escenario",
+          "dt": 0.01,
+          "ancho_dominio": 10.0,
+          "alto_dominio": 10.0,
+          "pasos": 300,
+          "particulas": [
+            {"posicion": [x, y], "velocidad": [vx, vy], "masa": m,
+             "radio": r, "e": restitution, "color": "color"}
+          ]
+        }
+        """
+        ruta = Path(__file__).parent.parent.parent / "scenarios" / archivo_json
+        
+        if not ruta.exists():
+            print(f"❌ Archivo no encontrado: {ruta}")
+            return False
+        
+        try:
+            with open(ruta, 'r', encoding='utf-8') as f:
+                datos = json.load(f)
+            
+            # Crear simulador con parámetros del JSON
+            contenedor = Contenedor(
+                ancho=datos.get("ancho_dominio", 10.0),
+                alto=datos.get("alto_dominio", 10.0)
+            )
+            self.simulador = Simulador(
+                contenedor,
+                dt=datos.get("dt", 0.01),
+                ancho_dominio=datos.get("ancho_dominio", 10.0),
+                alto_dominio=datos.get("alto_dominio", 10.0)
+            )
+            
+            # Agregar partículas
+            for p in datos["particulas"]:
+                self.simulador.agregar_particula(
+                    posicion=np.array(p["posicion"]),
+                    velocidad=np.array(p["velocidad"]),
+                    masa=p["masa"],
+                    radio=p["radio"],
+                    coef_restitution=p["e"],
+                    color=p["color"]
+                )
+            
+            # Ejecutar simulación
+            pasos = datos.get("pasos", 300)
+            print(f"\n✓ Escenario: {datos.get('nombre', 'Sin nombre')}")
+            print(f"✓ Descripción: {datos.get('descripcion', 'N/A')}")
+            print(f"✓ Partículas: {len(datos['particulas'])}")
+            print(f"⏳ Ejecutando {pasos} pasos...\n")
+            self.simulador.ejecutar(pasos)
+            return True
+            
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
+            print(f"❌ Error al cargar JSON: {e}")
+            return False
+    
+    def _listar_escenarios(self) -> List[str]:
+        """Lista archivos JSON disponibles en la carpeta scenarios."""
+        ruta_scenarios = Path(__file__).parent.parent.parent / "scenarios"
+        if not ruta_scenarios.exists():
+            return []
+        return sorted([f.name for f in ruta_scenarios.glob("*.json")])
     
     def _input_numero(self, prompt: str, tipo=float, rango: Tuple[float, float] = None) -> any:
         """Lee número del usuario con validación."""
@@ -82,101 +153,6 @@ class Menu:
         print(f"\n⏳ Ejecutando simulación con {num_pasos} pasos...")
         self.simulador.ejecutar(num_pasos)
     
-    def ejemplo_colision_elastica(self) -> None:
-        """Ejemplo: dos partículas, colisión perfectamente elástica."""
-        print("\n" + "="*60)
-        print("EJEMPLO: COLISIÓN ELÁSTICA (e=1.0)")
-        print("="*60)
-        print("Masas iguales, velocidades opuestas")
-        print("Predicción: Momento y energía constantes")
-        
-        self._crear_simulador()
-        
-        self.simulador.agregar_particula(
-            posicion=np.array([3.0, 5.0]),
-            velocidad=np.array([3.0, 0.0]),
-            masa=1.0,
-            radio=0.5,
-            coef_restitution=1.0,
-            color='red'
-        )
-        
-        self.simulador.agregar_particula(
-            posicion=np.array([7.0, 5.0]),
-            velocidad=np.array([-2.0, 0.0]),
-            masa=1.0,
-            radio=0.5,
-            coef_restitution=1.0,
-            color='blue'
-        )
-        
-        print("\n⏳ Ejecutando... (300 pasos)")
-        self.simulador.ejecutar(300)
-    
-    def ejemplo_colision_inelastica(self) -> None:
-        """Ejemplo: colisión inelástica con pérdida de energía."""
-        print("\n" + "="*60)
-        print("EJEMPLO: COLISIÓN INELÁSTICA (e=0.6)")
-        print("="*60)
-        print("Masas diferentes, coef. restitución parcial")
-        print("Predicción: Momento constante, energía disminuye")
-        
-        self._crear_simulador()
-        
-        self.simulador.agregar_particula(
-            posicion=np.array([2.0, 5.0]),
-            velocidad=np.array([4.0, 0.0]),
-            masa=2.0,
-            radio=0.5,
-            coef_restitution=0.6,
-            color='red'
-        )
-        
-        self.simulador.agregar_particula(
-            posicion=np.array([8.0, 5.0]),
-            velocidad=np.array([-1.0, 0.0]),
-            masa=1.0,
-            radio=0.5,
-            coef_restitution=0.6,
-            color='blue'
-        )
-        
-        print("\n⏳ Ejecutando... (300 pasos)")
-        self.simulador.ejecutar(300)
-    
-    def ejemplo_multiples_particulas(self) -> None:
-        """Ejemplo: sistema con 5 partículas aleatoriamente."""
-        print("\n" + "="*60)
-        print("EJEMPLO: MÚLTIPLES PARTÍCULAS")
-        print("="*60)
-        print("Sistema complejo con 5 partículas y múltiples colisiones")
-        
-        self._crear_simulador()
-        
-        # Posiciones, velocidades, masas fijas
-        configs = [
-            (np.array([1.5, 2.0]), np.array([2.0, 1.5]), 1.0),
-            (np.array([8.5, 8.0]), np.array([-1.5, -2.0]), 1.2),
-            (np.array([5.0, 5.0]), np.array([0.5, -1.0]), 0.8),
-            (np.array([2.0, 8.0]), np.array([1.0, -2.0]), 1.5),
-            (np.array([8.0, 2.0]), np.array([-2.0, 1.0]), 1.0),
-        ]
-        
-        colores = ['red', 'blue', 'green', 'yellow', 'orange']
-        
-        for i, (pos, vel, masa) in enumerate(configs):
-            self.simulador.agregar_particula(
-                posicion=pos,
-                velocidad=vel,
-                masa=masa,
-                radio=0.4,
-                coef_restitution=0.8,
-                color=colores[i]
-            )
-        
-        print("\n⏳ Ejecutando... (500 pasos)")
-        self.simulador.ejecutar(500)
-    
     def mostrar_menu_principal(self) -> None:
         """Muestra menú principal."""
         print("\n" + "="*60)
@@ -184,10 +160,8 @@ class Menu:
         print("="*60)
         print("\n¿Qué deseas hacer?")
         print("  1. Simulación personalizada (ingresar tus propios datos)")
-        print("  2. Ejemplo: Colisión elástica")
-        print("  3. Ejemplo: Colisión inelástica")
-        print("  4. Ejemplo: Múltiples partículas")
-        print("  5. Salir (cierra el programa)")
+        print("  2. Cargar escenario desde JSON (con ejemplos presets)")
+        print("  3. Salir (cierra el programa)")
         print("\n" + "-"*60)
     
     def procesar_opcion(self, opcion: str) -> None:
@@ -195,16 +169,45 @@ class Menu:
         if opcion == '1':
             self.personalizado()
         elif opcion == '2':
-            self.ejemplo_colision_elastica()
+            self._cargar_escenario_desde_menu()
         elif opcion == '3':
-            self.ejemplo_colision_inelastica()
-        elif opcion == '4':
-            self.ejemplo_multiples_particulas()
-        elif opcion == '5':
             print("\n✓ Gracias por usar el simulador. ¡Hasta pronto!")
             self.corriendo = False
         else:
             print("   ⚠️  Opción no válida. Intenta nuevamente.")
+    
+    def _cargar_escenario_desde_menu(self) -> None:
+        """Menú interactivo para cargar escenarios desde JSON."""
+        escenarios = self._listar_escenarios()
+        
+        if not escenarios:
+            print("\n❌ No hay escenarios disponibles en la carpeta 'scenarios/'")
+            return
+        
+        print("\n" + "="*60)
+        print("CARGAR ESCENARIO DESDE JSON")
+        print("="*60)
+        print("\nEscenarios disponibles:")
+        
+        for i, archivo in enumerate(escenarios, 1):
+            print(f"  {i}. {archivo}")
+        print(f"  {len(escenarios) + 1}. Volver")
+        
+        print("\n" + "-"*60)
+        
+        try:
+            opcion = input("Selecciona un escenario: ").strip()
+            idx = int(opcion) - 1
+            
+            if idx < 0 or idx >= len(escenarios):
+                print("   ⚠️  Opción no válida.")
+                return
+            
+            archivo = escenarios[idx]
+            self._cargar_escenario_json(archivo)
+            
+        except ValueError:
+            print("   ⚠️  Ingresa un número válido.")
     
     def ejecutar(self) -> None:
         """Loop principal que mantiene el programa corriendo."""
@@ -215,5 +218,5 @@ class Menu:
         
         while self.corriendo:
             self.mostrar_menu_principal()
-            opcion = input("Selecciona una opción (1-5): ").strip()
+            opcion = input("Selecciona una opción (1-3): ").strip()
             self.procesar_opcion(opcion)

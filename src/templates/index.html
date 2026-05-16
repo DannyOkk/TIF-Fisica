@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Colisiones 2D</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: calc(100vh - 40px);
+        }
+
+        /* Panel lateral */
+        .sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .escenarios-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .escenario-btn {
+            padding: 12px 15px;
+            background: #f5f5f5;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .escenario-btn:hover {
+            background: #e0e0e0;
+            border-color: #667eea;
+        }
+
+        .escenario-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Panel principal */
+        .main-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .info-header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .info-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .simulation-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .video-frame {
+            flex: 1;
+            background: #f5f5f5;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            border: 2px solid #ddd;
+        }
+
+        .video-frame img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 4px;
+        }
+
+        .video-frame.loading {
+            color: #999;
+            font-size: 16px;
+        }
+
+        /* Controles */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .slider-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(102, 126, 234, 0.4);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 5px rgba(102, 126, 234, 0.4);
+        }
+
+        .slider-value {
+            min-width: 50px;
+            text-align: right;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 6px;
+        }
+
+        .stat-box .label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+        }
+
+        .stat-box .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-top: 5px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .message {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .message.error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+
+        .message.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .sidebar {
+                max-height: 200px;
+            }
+
+            .button-group {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2>📋 Escenarios</h2>
+            <div class="escenarios-list" id="escenariosList">
+                <div class="video-frame loading">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Panel -->
+        <div class="main-panel">
+            <div id="messages"></div>
+
+            <div class="info-header">
+                <h1 id="titulo">Simulador de Colisiones 2D</h1>
+                <p id="descripcion">Selecciona un escenario para comenzar</p>
+            </div>
+
+            <div class="simulation-area">
+                <div class="video-frame loading" id="videoFrame">
+                    <span>Selecciona un escenario en el panel lateral para comenzar</span>
+                </div>
+
+                <div class="controls">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="reproducir()">⏵ Reproducir</button>
+                        <button class="btn-secondary" onclick="pausar()">⏸ Pausar</button>
+                        <button class="btn-secondary" onclick="anterior()">⏮ Anterior</button>
+                        <button class="btn-secondary" onclick="siguiente()">Siguiente ⏭</button>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Velocidad de reproducción</label>
+                        <div class="slider-container">
+                            <button class="btn-secondary" onclick="cambiarVelocidad(0.25)">0.25x</button>
+                            <input type="range" id="speedSlider" min="0.25" max="4" step="0.25" value="1" onchange="actualizarVelocidad()">
+                            <button class="btn-secondary" onclick="cambiarVelocidad(4)">4x</button>
+                            <span class="slider-value" id="speedValue">1x</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Ir a paso</label>
+                        <div class="slider-container">
+                            <input type="range" id="frameSlider" min="0" max="100" value="0" onchange="irAFrame()">
+                            <span class="slider-value" id="frameValue">1 / 100</span>
+                        </div>
+                    </div>
+
+                    <div class="stats">
+                        <div class="stat-box">
+                            <div class="label">Partículas</div>
+                            <div class="value" id="statParticulas">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="label">Frame Actual</div>
+                            <div class="value" id="statFrame">1</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="label">Total Frames</div>
+                            <div class="value" id="statTotal">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSim = {
+            loaded: false,
+            totalFrames: 0,
+            currentFrame: 0,
+            playing: false,
+            speed: 1.0,
+            interval: null
+        };
+
+        // Cargar lista de escenarios al iniciar
+        async function cargarEscenarios() {
+            try {
+                const response = await fetch('/api/escenarios');
+                const escenarios = await response.json();
+
+                const lista = document.getElementById('escenariosList');
+                lista.innerHTML = '';
+
+                if (escenarios.length === 0) {
+                    lista.innerHTML = '<p style="color: #999;">No hay escenarios disponibles</p>';
+                    return;
+                }
+
+                escenarios.forEach(escenario => {
+                    const btn = document.createElement('button');
+                    btn.className = 'escenario-btn';
+                    btn.innerHTML = `
+                        <strong>${escenario.nombre}</strong>
+                        <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                            ${escenario.descripcion.substring(0, 60)}...
+                        </div>
+                    `;
+                    btn.onclick = () => cargarSimulacion(escenario.nombre_archivo, btn);
+                    lista.appendChild(btn);
+                });
+            } catch (error) {
+                mostrarError('Error al cargar escenarios: ' + error.message);
+            }
+        }
+
+        async function cargarSimulacion(nombreArchivo, btn) {
+            try {
+                mostrarMensaje('Cargando simulación...', 'info');
+                document.querySelectorAll('.escenario-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const response = await fetch(`/api/cargar/${nombreArchivo}`, { method: 'POST' });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    mostrarError(data.error || 'Error al cargar la simulación');
+                    btn.classList.remove('active');
+                    return;
+                }
+
+                currentSim.loaded = true;
+                currentSim.totalFrames = data.total_frames;
+                currentSim.currentFrame = 0;
+                currentSim.playing = false;
+
+                document.getElementById('titulo').textContent = data.nombre;
+                document.getElementById('descripcion').textContent = data.descripcion;
+                document.getElementById('statParticulas').textContent = data.num_particulas;
+                document.getElementById('statTotal').textContent = data.total_frames;
+
+                document.getElementById('frameSlider').max = data.total_frames - 1;
+                document.getElementById('frameSlider').value = 0;
+
+                await mostrarFrame(0);
+                mostrarMensaje('✓ Simulación cargada correctamente', 'success');
+            } catch (error) {
+                mostrarError('Error: ' + error.message);
+                btn.classList.remove('active');
+            }
+        }
+
+        async function mostrarFrame(frameNum) {
+            if (!currentSim.loaded) {
+                document.getElementById('videoFrame').classList.add('loading');
+                document.getElementById('videoFrame').innerHTML = '<span>Selecciona un escenario para comenzar</span>';
+                return;
+            }
+
+            try {
+                document.getElementById('videoFrame').classList.add('loading');
+                document.getElementById('videoFrame').innerHTML = '<div class="loading-spinner"></div>';
+                
+                const response = await fetch(`/api/frame/${frameNum}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    mostrarError(data.error || 'Error al mostrar frame');
+                    document.getElementById('videoFrame').classList.remove('loading');
+                    document.getElementById('videoFrame').innerHTML = '<span style="color: #f44336;">Error al cargar frame</span>';
+                    return;
+                }
+
+                document.getElementById('videoFrame').classList.remove('loading');
+                document.getElementById('videoFrame').innerHTML = `<img src="data:image/png;base64,${data.image}" alt="Frame ${frameNum}">`;
+
+                currentSim.currentFrame = data.frame;
+                document.getElementById('frameValue').textContent = `${data.frame + 1} / ${data.total}`;
+                document.getElementById('frameSlider').value = data.frame;
+                document.getElementById('statFrame').textContent = data.frame + 1;
+            } catch (error) {
+                mostrarError('Error al mostrar frame: ' + error.message);
+                document.getElementById('videoFrame').classList.remove('loading');
+                document.getElementById('videoFrame').innerHTML = `<span style="color: #f44336;">${error.message}</span>`;
+            }
+        }
+
+        function reproducir() {
+            if (!currentSim.loaded) return;
+            currentSim.playing = true;
+
+            if (currentSim.interval) clearInterval(currentSim.interval);
+
+            currentSim.interval = setInterval(async () => {
+                if (currentSim.currentFrame < currentSim.totalFrames - 1) {
+                    await mostrarFrame(currentSim.currentFrame + 1);
+                } else {
+                    currentSim.playing = false;
+                    clearInterval(currentSim.interval);
+                    mostrarMensaje('✓ Simulación completada', 'success');
+                }
+            }, 50 / currentSim.speed);
+        }
+
+        function pausar() {
+            currentSim.playing = false;
+            if (currentSim.interval) clearInterval(currentSim.interval);
+        }
+
+        async function siguiente() {
+            pausar();
+            if (currentSim.currentFrame < currentSim.totalFrames - 1) {
+                await mostrarFrame(currentSim.currentFrame + 1);
+            }
+        }
+
+        async function anterior() {
+            pausar();
+            if (currentSim.currentFrame > 0) {
+                await mostrarFrame(currentSim.currentFrame - 1);
+            }
+        }
+
+        function cambiarVelocidad(valor) {
+            document.getElementById('speedSlider').value = valor;
+            actualizarVelocidad();
+        }
+
+        function actualizarVelocidad() {
+            const slider = document.getElementById('speedSlider');
+            currentSim.speed = parseFloat(slider.value);
+            document.getElementById('speedValue').textContent = `${currentSim.speed}x`;
+        }
+
+        async function irAFrame() {
+            pausar();
+            const frameNum = parseInt(document.getElementById('frameSlider').value);
+            await mostrarFrame(frameNum);
+        }
+
+        function mostrarMensaje(texto, tipo = 'info') {
+            const messagesDiv = document.getElementById('messages');
+            const msg = document.createElement('div');
+            msg.className = `message ${tipo}`;
+            msg.textContent = texto;
+            messagesDiv.appendChild(msg);
+
+            setTimeout(() => msg.remove(), 3000);
+        }
+
+        function mostrarError(texto) {
+            mostrarMensaje(texto, 'error');
+        }
+
+        // Inicializar
+        cargarEscenarios();
+    </script>
+</body>
+</html>

@@ -92,11 +92,12 @@ class Simulador:
         posiciones_actuales = [p.posicion.copy() for p in self.particulas]
         self.historico_posiciones.append(posiciones_actuales)
     
-    def ejecutar(self, num_pasos: int) -> None:
+    def ejecutar(self, num_pasos: int, mostrar: bool = True) -> None:
         """Ejecuta simulación y muestra visualización animada.
         
         Args:
             num_pasos: Número de pasos a simular
+            mostrar: Si True, muestra animación con matplotlib. Si False, solo calcula sin visualizar
         """
         self.historico_momentos.clear()
         self.historico_energias.clear()
@@ -105,14 +106,15 @@ class Simulador:
         for _ in range(num_pasos):
             self.paso_simulacion()
         
-        # Visualizar con animación
-        self.visualizador.crear_figura()
-        self.visualizador.animar(
-            self.particulas,
-            self.historico_posiciones,
-            self.historico_momentos,
-            self.historico_energias
-        )
+        # Visualizar con animación solo si se solicita (no en servidor web)
+        if mostrar:
+            self.visualizador.crear_figura()
+            self.visualizador.animar(
+                self.particulas,
+                self.historico_posiciones,
+                self.historico_momentos,
+                self.historico_energias
+            )
     
     def limpiar(self) -> None:
         """Limpia partículas y datos de simulación anterior."""

@@ -131,12 +131,85 @@ class Visualizador:
         momentos: List[float],
         energias: List[float]
     ) -> None:
-        """Crea animación de la simulación paso a paso."""
+        """Crea animación interactiva de la simulación.
+        
+        CONTROLES INTERACTIVOS:
+        - ESPACIO: Pausar/Reanudar
+        - +/=: Acelerar 2x
+        - -: Desacelerar 0.5x
+        - ↑: Ir al siguiente paso (cuando está pausada)
+        - ↓: Ir al paso anterior (cuando está pausada)
+        - ESC/Q: Cerrar animación
+        - S: Guardar último frame como imagen
+        
+        El tiempo entre frames se ajusta con la velocidad.
+        """
         if self.ax_sim is None or not historico_posiciones:
             return
         
-        # Mostrar cada frame con pausa
-        for frame in range(len(historico_posiciones)):
+        # Estado de control
+        state = {
+            'paused': False,
+            'speed_multiplier': 1.0,  # 1.0 = velocidad normal (50ms)
+            'current_frame': 0,
+            'max_frame': len(historico_posiciones) - 1,
+            'should_exit': False
+        }
+        
+        def on_key(event):
+            """Manejador de eventos de teclado."""
+            if event.key == ' ':  # ESPACIO: Pausar/Reanudar
+                state['paused'] = not state['paused']
+                status = "PAUSADA" if state['paused'] else "REPRODUCIENDO"
+                print(f"⏸️  Simulación {status}")
+            
+            elif event.key in ['+', '=']:  # Acelerar
+                state['speed_multiplier'] = min(state['speed_multiplier'] * 2, 16)
+                print(f"⏩ Velocidad x{state['speed_multiplier']:.1f}")
+            
+            elif event.key == '-':  # Desacelerar
+                state['speed_multiplier'] = max(state['speed_multiplier'] / 2, 0.25)
+                print(f"⏪ Velocidad x{state['speed_multiplier']:.1f}")
+            
+            elif event.key == 'up':  # Siguiente paso (cuando pausada)
+                if state['paused'] and state['current_frame'] < state['max_frame']:
+                    state['current_frame'] += 1
+                    print(f"→ Paso {state['current_frame'] + 1}/{len(historico_posiciones)}")
+            
+            elif event.key == 'down':  # Paso anterior (cuando pausada)
+                if state['paused'] and state['current_frame'] > 0:
+                    state['current_frame'] -= 1
+                    print(f"← Paso {state['current_frame'] + 1}/{len(historico_posiciones)}")
+            
+            elif event.key in ['escape', 'q']:  # Cerrar
+                state['should_exit'] = True
+                print("🛑 Cerrando animación...")
+                plt.close(self.fig)
+        
+        # Conectar evento de teclado
+        self.fig.canvas.mpl_connect('key_press_event', on_key)
+        
+        # Mostrar instrucciones
+        print("\n" + "="*60)
+        print("CONTROLES INTERACTIVOS DE ANIMACIÓN")
+        print("="*60)
+        print("  ESPACIO: Pausar/Reanudar")
+        print("  +/-: Acelerar/Desacelerar")
+        print("  ↑/↓: Siguiente/Anterior paso (cuando está pausada)")
+        print("  ESC/Q: Cerrar animación")
+        print("="*60 + "\n")
+        
+        frame_display_count = 0
+        
+        while state['current_frame'] <= state['max_frame'] and not state['should_exit']:
+            if not state['paused']:
+                frame_display_count += 1
+                
+                if frame_display_count % max(1, int(1 / state['speed_multiplier'])) == 0:
+                    state['current_frame'] += 1
+                    if state['current_frame'] > state['max_frame']:
+                        state['current_frame'] = state['max_frame']
+            
             # Limpiar panel de simulación
             self.ax_sim.clear()
             self.ax_sim.set_xlim(0, self.ancho)
@@ -144,12 +217,19 @@ class Visualizador:
             self.ax_sim.set_aspect('equal')
             self.ax_sim.set_xlabel('x (m)')
             self.ax_sim.set_ylabel('y (m)')
-            self.ax_sim.set_title(f'Simulación 2D - Paso {frame + 1}/{len(historico_posiciones)}')
+            
+            frame_idx = min(state['current_frame'], len(historico_posiciones) - 1)
+            status_text = "[PAUSADA]" if state['paused'] else "[REPRODUCIENDO]"
+            speed_text = f"x{state['speed_multiplier']:.1f}" if state['speed_multiplier'] != 1.0 else ""
+            
+            self.ax_sim.set_title(
+                f"Simulación 2D - Paso {frame_idx + 1}/{len(historico_posiciones)} {status_text} {speed_text}"
+            )
             self.ax_sim.grid(True, alpha=0.3)
             
             # Dibujar partículas en posición del frame actual
             for i, p in enumerate(particulas):
-                posicion = historico_posiciones[frame][i]
+                posicion = historico_posiciones[frame_idx][i]
                 circle = Circle(
                     posicion,
                     p.radio,
@@ -171,8 +251,8 @@ class Visualizador:
                 )
             
             # Actualizar gráficos de magnitudes hasta el frame actual
-            if frame > 0:
-                pasos_actuales = frame + 1
+            if frame_idx > 0:
+                pasos_actuales = frame_idx + 1
                 
                 # Momento
                 self.ax_momento.clear()
@@ -197,7 +277,10 @@ class Visualizador:
                     self.ax_energia.set_ylim(0, max(energias[:pasos_actuales]) * 1.1)
             
             plt.tight_layout()
-            plt.pause(0.05)  # 50ms de pausa entre frames
+            
+            # Calcular tiempo de pausa ajustado por velocidad
+            pause_time = 0.05 / state['speed_multiplier']  # 50ms ajustado
+            plt.pause(pause_time)
         
         self.mostrar()
     

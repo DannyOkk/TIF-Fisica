@@ -1,0 +1,8 @@
+# Dependencias para Simulador de Colisiones 2D
+# TFI - Ingeniería en Informática - Universidad de Mendoza
+
+# NumPy: Computación vectorial y álgebra lineal
+numpy>=1.20.0
+
+# Matplotlib: Visualización de datos y animación
+matplotlib>=3.3.0

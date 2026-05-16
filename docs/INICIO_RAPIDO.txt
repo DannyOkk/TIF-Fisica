@@ -1,0 +1,149 @@
+════════════════════════════════════════════════════════════════════════════════
+                    GUÍA RÁPIDA DE COMANDOS
+════════════════════════════════════════════════════════════════════════════════
+
+INSTALACIÓN Y PRIMEROS PASOS:
+─────────────────────────────────────────────────────────────────────────────
+
+1️⃣  Instala dependencias
+    $ pip3 install -r requirements.txt
+
+2️⃣  Ejecuta el programa principal
+    $ python3 main.py
+
+3️⃣  Valida que todo funciona (12 pruebas unitarias)
+    $ python3 -m tests.validacion
+
+
+MENÚ DEL PROGRAMA:
+─────────────────────────────────────────────────────────────────────────────
+
+Cuando ejecutas "python3 main.py", verás un menú con 5 opciones:
+
+  [1] Simulación personalizada
+      → Ingresas tus propios datos
+      → Número de partículas
+      → Posición, velocidad, masa, radio, coeficiente de restitución
+      → Número de pasos a simular
+
+  [2] Ejemplo: Colisión elástica
+      → Caso predefinido automático
+      → Muestra conservación de momento y energía
+
+  [3] Ejemplo: Colisión inelástica
+      → Caso predefinido automático
+      → Muestra momento constante pero energía decreciente
+
+  [4] Ejemplo: Múltiples partículas
+      → Caso predefinido con 5 partículas
+      → Comportamiento emergente complejo
+
+  [5] Salir
+      → Cierra el programa
+      → Única forma de salir
+
+
+IMPORTANTE: El menú NO se cierra después de cada simulación.
+Después de ver un gráfico:
+  • Cierra la ventana de matplotlib
+  • Automáticamente vuelves al menú
+  • Puedes elegir otro caso sin reiniciar
+
+
+ESTRUCTURA DE CARPETAS:
+─────────────────────────────────────────────────────────────────────────────
+
+TIF-Fisica/
+├── main.py                 ← EJECUTA AQUÍ
+├── requirements.txt        ← pip3 install -r requirements.txt
+│
+├── src/
+│   ├── modelo/             Clases: Particula, MotorFisico, Contenedor
+│   ├── vista/              Clase: Visualizador
+│   └── controlador/        Clases: Simulador, Menu
+│
+├── tests/
+│   └── validacion.py       ← python3 -m tests.validacion
+│
+├── docs/
+│   └── README.md           Documentación completa
+│
+├── ARQUITECTURA.txt        Diagrama de estructura
+└── MEJORAS.txt             Cambios realizados
+
+
+ARCHIVOS IMPORTANTES:
+─────────────────────────────────────────────────────────────────────────────
+
+Para LEER:
+  • docs/README.md          - Documentación del proyecto
+  • ARQUITECTURA.txt        - Visión general de estructura
+  • MEJORAS.txt            - Cambios realizados en refactorización
+
+Para EJECUTAR:
+  • main.py                 - Programa principal (menú interactivo)
+  • python3 -m tests.validacion  - Suite de pruebas
+
+Para ENTENDER:
+  • src/modelo/particula.py      - Modelo de datos (simple)
+  • src/modelo/motor_fisico.py   - Resolución de colisiones
+  • src/vista/visualizador.py    - Visualización matplotlib
+  • src/controlador/simulador.py - Orquestación
+  • src/controlador/menu.py      - Interfaz de usuario
+
+
+CASOS DE USO COMUNES:
+─────────────────────────────────────────────────────────────────────────────
+
+📋 Demostración rápida (30 segundos)
+   $ python3 main.py
+   Selecciona opción 2 (Colisión elástica)
+   Cierra el gráfico
+   Selecciona opción 3 (Colisión inelástica)
+   Observa diferencia: momento constante, energía disminuye
+
+📋 Validar que todo funciona (1 minuto)
+   $ python3 -m tests.validacion
+   Espera: ✓ 12/12 tests pasaron (100.0%)
+
+📋 Prueba un ejercicio personalizado (5 minutos)
+   $ python3 main.py
+   Selecciona opción 1
+   Ingresa datos:
+     - 2 partículas
+     - P1: pos=[1,5], vel=[3,0], m=1, r=0.5, e=1
+     - P2: pos=[9,5], vel=[-2,0], m=1, r=0.5, e=1
+     - 300 pasos
+   Observa: ambos líneas horizontales = conservación ✓
+
+📋 Explora ejemplos avanzados (10 minutos)
+   $ python3 main.py
+   Prueba opción 2 → Mira gráfico
+   Prueba opción 3 → Mira gráfico
+   Prueba opción 4 → Mira gráfico
+   Compara comportamientos
+
+
+SOLUCIÓN DE PROBLEMAS:
+─────────────────────────────────────────────────────────────────────────────
+
+❌ Error: "No module named 'src'"
+   Solución: Ejecuta desde la raíz del proyecto
+            $ cd /Users/catalan/Documents/GitHub/TIF-Fisica
+            $ python3 main.py
+
+❌ Error: "No module named 'numpy' or 'matplotlib'"
+   Solución: Instala dependencias
+            $ pip3 install -r requirements.txt
+
+❌ Matplotlib no muestra gráficos en Mac
+   Solución: Actualiza matplotlib
+            $ pip3 install --upgrade matplotlib
+
+❌ Los tests no corren
+   Solución: Ejecuta como módulo
+            $ python3 -m tests.validacion
+
+❌ El programa no responde mi input
+   Solución: Presiona Enter después de escribir
+            (Esto es normal en terminales interactivas)

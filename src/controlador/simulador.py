@@ -33,6 +33,7 @@ class Simulador:
         self.visualizador = Visualizador(ancho_dominio, alto_dominio)
         self.historico_momentos: List[float] = []
         self.historico_energias: List[float] = []
+        self.historico_posiciones: List[List[np.ndarray]] = []  # Posiciones por paso
     
     def agregar_particula(
         self,
@@ -86,27 +87,32 @@ class Simulador:
         # 4. Registrar magnitudes
         self.historico_momentos.append(self.calcular_momento_total())
         self.historico_energias.append(self.calcular_energia_total())
+        
+        # 5. Guardar posiciones actuales para animación
+        posiciones_actuales = [p.posicion.copy() for p in self.particulas]
+        self.historico_posiciones.append(posiciones_actuales)
     
     def ejecutar(self, num_pasos: int) -> None:
-        """Ejecuta simulación y muestra visualización.
+        """Ejecuta simulación y muestra visualización animada.
         
         Args:
             num_pasos: Número de pasos a simular
         """
         self.historico_momentos.clear()
         self.historico_energias.clear()
+        self.historico_posiciones.clear()
         
         for _ in range(num_pasos):
             self.paso_simulacion()
         
-        # Visualizar
+        # Visualizar con animación
         self.visualizador.crear_figura()
-        self.visualizador.dibujar_particulas(self.particulas)
-        self.visualizador.actualizar_graficos(
+        self.visualizador.animar(
+            self.particulas,
+            self.historico_posiciones,
             self.historico_momentos,
             self.historico_energias
         )
-        self.visualizador.mostrar()
     
     def limpiar(self) -> None:
         """Limpia partículas y datos de simulación anterior."""
@@ -114,3 +120,4 @@ class Simulador:
         self.contador_id = 0
         self.historico_momentos.clear()
         self.historico_energias.clear()
+        self.historico_posiciones.clear()

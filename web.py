@@ -10,7 +10,7 @@ if __name__ == '__main__':
     print("SIMULADOR DE COLISIONES 2D - INTERFAZ WEB")
     print("="*60)
     print("\n🚀 Iniciando servidor Flask...")
-    print("📍 Abre tu navegador en: http://127.0.0.1:5001")
+    print("📍 Abre tu navegador en: http://127.0.0.1:5002")
     print("\n💡 Controles:")
     print("   - ⏵ Reproducir: Inicia la animación")
     print("   - ⏸ Pausar: Pausa la animación")
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     
     # Abrir navegador automáticamente
     time.sleep(1)
-    webbrowser.open('http://127.0.0.1:5001')
+    webbrowser.open('http://127.0.0.1:5002')
     
     # Ejecutar servidor
-    app.run(debug=False, host='127.0.0.1', port=5001)
+    app.run(debug=False, host='127.0.0.1', port=5002)

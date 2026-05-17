@@ -3,636 +3,414 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Colisiones 2D</title>
+    <title>Simulador de Colisiones 2D - Laboratorio</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 300px 1fr;
-            gap: 20px;
-            height: calc(100vh - 40px);
-        }
-
-        /* Panel lateral */
-        .sidebar {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            overflow-y: auto;
-        }
-
-        .sidebar h2 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        .escenarios-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .escenario-btn {
-            padding: 12px 15px;
-            background: #f5f5f5;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: left;
-            font-size: 14px;
-        }
-
-        .escenario-btn:hover {
-            background: #e0e0e0;
-            border-color: #667eea;
-        }
-
-        .escenario-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-
-        /* Panel principal */
-        .main-panel {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .info-header {
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
-        .info-header h1 {
-            color: #333;
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        .info-header p {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .simulation-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .video-frame {
-            flex: 1;
-            background: #f5f5f5;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 400px;
-            border: 2px solid #ddd;
-        }
-
-        .video-frame img {
-            max-width: 100%;
-            max-height: 100%;
-            border-radius: 4px;
-        }
-
-        .video-frame.loading {
-            color: #999;
-            font-size: 16px;
-        }
-
-        /* Controles */
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-        }
-
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .control-group label {
-            font-weight: 600;
-            color: #333;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .button-group {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-        }
-
-        button {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            font-size: 14px;
-        }
-
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-secondary {
-            background: #f0f0f0;
-            color: #333;
-            border: 1px solid #ddd;
-        }
-
-        .btn-secondary:hover {
-            background: #e0e0e0;
-        }
-
-        .slider-container {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        input[type="range"] {
-            flex: 1;
-            height: 6px;
-            border-radius: 3px;
-            background: #ddd;
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #667eea;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(102, 126, 234, 0.4);
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #667eea;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 2px 5px rgba(102, 126, 234, 0.4);
-        }
-
-        .slider-value {
-            min-width: 50px;
-            text-align: right;
-            font-weight: 600;
-            color: #667eea;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 10px;
-        }
-
-        .stat-box {
-            text-align: center;
-            padding: 10px;
-            background: #f5f5f5;
-            border-radius: 6px;
-        }
-
-        .stat-box .label {
-            font-size: 12px;
-            color: #999;
-            text-transform: uppercase;
-        }
-
-        .stat-box .value {
-            font-size: 18px;
-            font-weight: bold;
-            color: #667eea;
-            margin-top: 5px;
-        }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .message {
-            padding: 12px 15px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .message.error {
-            background: #ffebee;
-            color: #c62828;
-            border-left: 4px solid #c62828;
-        }
-
-        .message.success {
-            background: #e8f5e9;
-            color: #2e7d32;
-            border-left: 4px solid #2e7d32;
-        }
-
-        @media (max-width: 1024px) {
-            .container {
-                grid-template-columns: 1fr;
-                height: auto;
-            }
-
-            .sidebar {
-                max-height: 200px;
-            }
-
-            .button-group {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; background: #f5f5f5; color: #2c3e50; }
+        .header { background: #1a237e; color: white; padding: 12px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 15px; font-weight: 500; }
+        .header p { font-size: 10px; opacity: 0.8; margin-top: 2px; }
+        .container { display: grid; grid-template-columns: 1fr 200px; gap: 10px; padding: 10px 16px; max-width: 2400px; margin: 0 auto; height: calc(100vh - 60px); }
+        .main-panel { display: flex; flex-direction: column; gap: 8px; }
+        .simulation-box { background: white; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); overflow: hidden; flex: 1; display: flex; flex-direction: column; }
+        .simulation-header { background: #fafafa; padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-size: 10px; font-weight: 600; color: #666; text-transform: uppercase; }
+        .simulation-canvas { flex: 1; display: flex; align-items: center; justify-content: center; background: white; }
+        .simulation-canvas img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .info-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 8px 12px; border-top: 1px solid #e0e0e0; font-size: 9px; }
+        .info-item { text-align: center; }
+        .info-label { color: #999; display: block; margin-bottom: 2px; }
+        .info-value { font-weight: 600; font-size: 12px; color: #1a237e; }
+        .sidebar { display: flex; flex-direction: column; gap: 8px; height: 100%; overflow-y: auto; }
+        .panel { background: white; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); overflow: hidden; }
+        .panel-header { background: #1a237e; color: white; padding: 8px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+        .panel-content { padding: 10px 12px; font-size: 9px; }
+        .escenarios-list { display: flex; flex-direction: column; gap: 4px; }
+        .escenario-btn { padding: 7px 10px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 2px; font-size: 9px; cursor: pointer; transition: all 0.2s; text-align: left; }
+        .escenario-btn:hover { background: #eeeeee; }
+        .escenario-btn.active { background: #1a237e; color: white; border-color: #1a237e; }
+        .escenario-btn strong { display: block; font-weight: 600; margin-bottom: 1px; }
+        .btn { padding: 6px 10px; background: white; border: 1px solid #ddd; border-radius: 2px; font-size: 9px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { background: #f5f5f5; }
+        .btn-primary { background: #1a237e; color: white; border-color: #1a237e; grid-column: 1 / -1; }
+        .btn-primary:hover { background: #0d47a1; }
+        .button-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+        .controls-group { display: flex; flex-direction: column; gap: 6px; }
+        .control-label { font-weight: 600; color: #666; font-size: 8px; text-transform: uppercase; margin-bottom: 3px; display: block; }
+        .slider-container { display: grid; grid-template-columns: 1fr auto; gap: 5px; align-items: center; }
+        input[type="range"] { height: 4px; border-radius: 2px; background: #ddd; outline: none; -webkit-appearance: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%; background: #1a237e; cursor: pointer; }
+        input[type="range"]::-moz-range-thumb { width: 11px; height: 11px; border-radius: 50%; background: #1a237e; cursor: pointer; border: none; }
+        input[type="number"], input[type="text"], select { padding: 5px 7px; border: 1px solid #ddd; border-radius: 2px; font-size: 9px; width: 100%; }
+        .slider-value { font-weight: 600; color: #1a237e; font-size: 8px; min-width: 24px; text-align: right; }
+        .particles-table { width: 100%; border-collapse: collapse; font-size: 8px; }
+        .particles-table th { background: #f0f0f0; font-weight: 600; color: #666; border-bottom: 1px solid #ddd; }
+        .particles-table th, .particles-table td { padding: 3px; text-align: center; border-bottom: 1px solid #eee; }
+        #messages { position: fixed; top: 60px; right: 16px; z-index: 1000; display: flex; flex-direction: column; gap: 6px; max-width: 280px; }
+        .message { padding: 8px 12px; border-radius: 2px; font-size: 10px; animation: slideIn 0.3s ease; box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .message.info { background: #e3f2fd; color: #0d47a1; border-left: 2px solid #1976d2; }
+        .message.success { background: #e8f5e9; color: #1b5e20; border-left: 2px solid #4caf50; }
+        .message.error { background: #ffebee; color: #b71c1c; border-left: 2px solid #f44336; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 2000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 20px; border-radius: 3px; width: 90%; max-width: 380px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+        .modal-content h3 { font-size: 12px; margin-bottom: 12px; color: #1a237e; }
+        .modal-field { margin-bottom: 10px; }
+        .modal-field label { display: block; font-weight: 600; font-size: 9px; margin-bottom: 3px; color: #666; }
+        .modal-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+        .sidebar::-webkit-scrollbar { width: 5px; }
+        .sidebar::-webkit-scrollbar-track { background: #f5f5f5; }
+        .sidebar::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+        .sidebar::-webkit-scrollbar-thumb:hover { background: #999; }
     </style>
 </head>
 <body>
+    <div class="header">
+        <h1>🔬 Simulador de Colisiones 2D</h1>
+        <p>Laboratorio de Física - Universidad de Mendoza</p>
+    </div>
+
+    <div id="messages"></div>
+
     <div class="container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <h2>📋 Escenarios</h2>
-            <div class="escenarios-list" id="escenariosList">
-                <div class="video-frame loading">
-                    <div class="loading-spinner"></div>
+        <!-- PANEL PRINCIPAL -->
+        <div class="main-panel">
+            <div class="simulation-box">
+                <div class="simulation-header">Simulación 2D</div>
+                <div class="simulation-canvas" id="simCanvas"><span>Selecciona un escenario</span></div>
+                <div class="info-bar">
+                    <div class="info-item"><span class="info-label">Frame</span><span class="info-value" id="frameInfo">0/0</span></div>
+                    <div class="info-item"><span class="info-label">Partículas</span><span class="info-value" id="particlesInfo">0</span></div>
+                    <div class="info-item"><span class="info-label">Tiempo</span><span class="info-value" id="timeInfo">0.00 s</span></div>
+                    <div class="info-item"><span class="info-label">Estado</span><span class="info-value" id="statusInfo">—</span></div>
                 </div>
             </div>
         </div>
 
-        <!-- Main Panel -->
-        <div class="main-panel">
-            <div id="messages"></div>
-
-            <div class="info-header">
-                <h1 id="titulo">Simulador de Colisiones 2D</h1>
-                <p id="descripcion">Selecciona un escenario para comenzar</p>
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <!-- ESCENARIOS -->
+            <div class="panel">
+                <div class="panel-header">📋 Escenarios</div>
+                <div class="panel-content">
+                    <div class="escenarios-list" id="scenariosList">
+                        <div style="color: #999;">Cargando...</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="abrirModalPersonalizado()" style="margin-top: 6px;">+ Personalizado</button>
+                </div>
             </div>
 
-            <div class="simulation-area">
-                <div class="video-frame loading" id="videoFrame">
-                    <span>Selecciona un escenario en el panel lateral para comenzar</span>
+            <!-- INFORMACIÓN -->
+            <div class="panel">
+                <div class="panel-header">ℹ️ Información</div>
+                <div class="panel-content info-texto" id="infoPanel" style="display: none;">
+                    <strong id="infoTitle">—</strong>
+                    <div id="infoDesc" style="font-size: 8px; color: #888; margin-top: 4px;"></div>
+                    <table class="particles-table" style="margin-top: 6px;">
+                        <thead><tr><th>ID</th><th>m</th><th>r</th><th>e</th></tr></thead>
+                        <tbody id="particlesTable"></tbody>
+                    </table>
                 </div>
+            </div>
 
-                <div class="controls">
+            <!-- CONTROLES -->
+            <div class="panel">
+                <div class="panel-header">⏯️ Reproducción</div>
+                <div class="panel-content controls-group">
+                    <button class="btn btn-primary" onclick="reproducir()">▶ Reproducir</button>
                     <div class="button-group">
-                        <button class="btn-primary" onclick="reproducir()">⏵ Reproducir</button>
-                        <button class="btn-secondary" onclick="pausar()">⏸ Pausar</button>
-                        <button class="btn-secondary" onclick="anterior()">⏮ Anterior</button>
-                        <button class="btn-secondary" onclick="siguiente()">Siguiente ⏭</button>
+                        <button class="btn" onclick="anterior()">⏮</button>
+                        <button class="btn" onclick="pausar()">⏸</button>
+                        <button class="btn" onclick="siguiente()">⏭</button>
                     </div>
+                    <div><label class="control-label">Velocidad</label><div class="slider-container"><input type="range" id="speedSlider" min="0.5" max="2" step="0.5" value="1" onchange="actualizarVelocidad()"><span class="slider-value" id="speedValue">1x</span></div></div>
+                    <div><label class="control-label">Frame</label><input type="range" id="frameSlider" min="0" max="100" value="0" onchange="irAFrame()"><div style="text-align: center; margin-top: 2px;"><span class="info-value" id="frameSliderValue" style="font-size: 10px;">1/100</span></div></div>
+                </div>
+            </div>
 
-                    <div class="control-group">
-                        <label>Velocidad de reproducción</label>
-                        <div class="slider-container">
-                            <button class="btn-secondary" onclick="cambiarVelocidad(0.25)">0.25x</button>
-                            <input type="range" id="speedSlider" min="0.25" max="4" step="0.25" value="1" onchange="actualizarVelocidad()">
-                            <button class="btn-secondary" onclick="cambiarVelocidad(4)">4x</button>
-                            <span class="slider-value" id="speedValue">1x</span>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Ir a paso</label>
-                        <div class="slider-container">
-                            <input type="range" id="frameSlider" min="0" max="100" value="0" onchange="irAFrame()">
-                            <span class="slider-value" id="frameValue">1 / 100</span>
-                        </div>
-                    </div>
-
-                    <div class="stats">
-                        <div class="stat-box">
-                            <div class="label">Partículas</div>
-                            <div class="value" id="statParticulas">0</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="label">Frame Actual</div>
-                            <div class="value" id="statFrame">1</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="label">Total Frames</div>
-                            <div class="value" id="statTotal">0</div>
-                        </div>
-                    </div>
+            <!-- AGREGAR PARTÍCULA (solo para personalizado) -->
+            <div class="panel" id="addParticlePanel" style="display: none;">
+                <div class="panel-header">➕ Partículas</div>
+                <div class="panel-content controls-group">
+                    <button class="btn btn-primary" onclick="abrirModalAgregar()">+ Agregar</button>
+                    <button class="btn btn-primary" id="btnEjecutar" onclick="ejecutarSimulacion()" style="display: none; background: #ff6f00;">⚡ Ejecutar</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- MODAL PERSONALIZADO -->
+    <div class="modal" id="modalPersonalizado">
+        <div class="modal-content">
+            <h3>Crear Simulación Personalizada</h3>
+            <div class="modal-field"><label>Ancho del dominio (m)</label><input type="number" id="perDomAncho" value="10" min="5" max="20" step="1"></div>
+            <div class="modal-field"><label>Alto del dominio (m)</label><input type="number" id="perDomAlto" value="10" min="5" max="20" step="1"></div>
+            <div class="modal-field"><label>Pasos de simulación</label><input type="number" id="perNumPasos" value="300" min="10" max="5000" step="10"></div>
+            <div class="modal-buttons">
+                <button class="btn" onclick="cerrarModalPersonalizado()">Cancelar</button>
+                <button class="btn btn-primary" onclick="crearSimulacionPersonalizada()">Crear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL AGREGAR PARTÍCULA -->
+    <div class="modal" id="modalAgregar">
+        <div class="modal-content">
+            <h3>Agregar Partícula</h3>
+            <div class="modal-field"><label>Pos X (m)</label><input type="number" id="newPosX" value="5" step="0.1" min="0" max="20"></div>
+            <div class="modal-field"><label>Pos Y (m)</label><input type="number" id="newPosY" value="5" step="0.1" min="0" max="20"></div>
+            <div class="modal-field"><label>Vel X (m/s)</label><input type="number" id="newVelX" value="0" step="0.1" min="-20" max="20"></div>
+            <div class="modal-field"><label>Vel Y (m/s)</label><input type="number" id="newVelY" value="0" step="0.1" min="-20" max="20"></div>
+            <div class="modal-field"><label>Masa (kg)</label><input type="number" id="newMasa" value="0.5" step="0.1" min="0.1" max="100"></div>
+            <div class="modal-field"><label>Radio (m)</label><input type="number" id="newRadio" value="0.2" step="0.05" min="0.05" max="2"></div>
+            <div class="modal-field"><label>Coef. Restitución</label><input type="number" id="newE" value="1" step="0.1" min="0" max="1"></div>
+            <div class="modal-buttons">
+                <button class="btn" onclick="cerrarModalAgregar()">Cancelar</button>
+                <button class="btn btn-primary" onclick="enviarAgregarParticula()">Agregar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        let currentSim = {
-            loaded: false,
-            totalFrames: 0,
-            currentFrame: 0,
-            playing: false,
-            speed: 1.0,
-            playToken: 0
-        };
-
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
+        let currentSim = {loaded: false, totalFrames: 0, currentFrame: 0, playing: false, speed: 1.0, playToken: 0, escenarioActual: null, personalizado: false};
         const frameCache = new Map();
-        const frameInFlight = new Map();
 
-        function cacheSet(frameNum, data) {
-            frameCache.set(frameNum, data);
-            if (frameCache.size > 20) {
-                const keys = Array.from(frameCache.keys()).sort((a, b) => a - b);
-                while (frameCache.size > 20 && keys.length) {
-                    const key = keys.shift();
-                    if (key !== currentSim.currentFrame) {
-                        frameCache.delete(key);
-                    }
-                }
-            }
+        function mostrarMensaje(txt, tipo='info') {
+            const msg = document.createElement('div');
+            msg.className = `message ${tipo}`;
+            msg.textContent = txt;
+            document.getElementById('messages').appendChild(msg);
+            setTimeout(() => msg.remove(), 3500);
         }
 
-        async function fetchFrame(frameNum) {
-            if (frameNum < 0 || frameNum >= currentSim.totalFrames) {
-                return null;
-            }
-            if (frameCache.has(frameNum)) {
-                return frameCache.get(frameNum);
-            }
-            if (frameInFlight.has(frameNum)) {
-                return frameInFlight.get(frameNum);
-            }
-
-            const requestPromise = (async () => {
-                const response = await fetch(`/api/frame/${frameNum}`);
-                const data = await response.json();
-                if (response.ok) {
-                    cacheSet(frameNum, data);
-                    return data;
-                }
-                return { error: data.error || 'Error al mostrar frame' };
-            })();
-
-            frameInFlight.set(frameNum, requestPromise);
-            try {
-                return await requestPromise;
-            } finally {
-                frameInFlight.delete(frameNum);
-            }
+        // ===== MODALES =====
+        function abrirModalPersonalizado() {
+            document.getElementById('modalPersonalizado').classList.add('active');
+        }
+        function cerrarModalPersonalizado() {
+            document.getElementById('modalPersonalizado').classList.remove('active');
+        }
+        function abrirModalAgregar() {
+            document.getElementById('modalAgregar').classList.add('active');
+        }
+        function cerrarModalAgregar() {
+            document.getElementById('modalAgregar').classList.remove('active');
         }
 
-
-        // Cargar lista de escenarios al iniciar
-        async function cargarEscenarios() {
+        // ===== CREAR SIMULACIÓN PERSONALIZADA =====
+        async function crearSimulacionPersonalizada() {
             try {
-                const response = await fetch('/api/escenarios');
-                const escenarios = await response.json();
-
-                const lista = document.getElementById('escenariosList');
-                lista.innerHTML = '';
-
-                if (escenarios.length === 0) {
-                    lista.innerHTML = '<p style="color: #999;">No hay escenarios disponibles</p>';
+                mostrarMensaje('Creando...', 'info');
+                const ancho = parseFloat(document.getElementById('perDomAncho').value);
+                const alto = parseFloat(document.getElementById('perDomAlto').value);
+                
+                const res = await fetch('/api/nueva_simulacion', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ancho, alto})
+                });
+                
+                if (!res.ok) {
+                    const data = await res.json();
+                    mostrarMensaje(data.error || 'Error', 'error');
                     return;
                 }
-
-                escenarios.forEach(escenario => {
-                    const btn = document.createElement('button');
-                    btn.className = 'escenario-btn';
-                    btn.innerHTML = `
-                        <strong>${escenario.nombre}</strong>
-                        <div style="font-size: 12px; color: #666; margin-top: 5px;">
-                            ${escenario.descripcion.substring(0, 60)}...
-                        </div>
-                    `;
-                    btn.onclick = () => cargarSimulacion(escenario.nombre_archivo, btn);
-                    lista.appendChild(btn);
-                });
-            } catch (error) {
-                mostrarError('Error al cargar escenarios: ' + error.message);
+                
+                const data = await res.json();
+                currentSim = {loaded: true, totalFrames: 1, currentFrame: 0, playing: false, speed: 1.0, playToken: currentSim.playToken + 1, escenarioActual: null, personalizado: true};
+                frameCache.clear();
+                
+                document.querySelectorAll('.escenario-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById('particlesInfo').textContent = '0';
+                document.getElementById('infoTitle').textContent = 'Simulación Personalizada';
+                document.getElementById('infoDesc').textContent = `Dominio: ${ancho}×${alto} m | Pasos: ${document.getElementById('perNumPasos').value}`;
+                document.getElementById('infoPanel').style.display = 'block';
+                document.getElementById('particlesTable').innerHTML = '';
+                document.getElementById('addParticlePanel').style.display = 'block';
+                document.getElementById('btnEjecutar').style.display = 'block';
+                document.getElementById('frameSlider').max = 1;
+                document.getElementById('frameSlider').value = 0;
+                
+                cerrarModalPersonalizado();
+                mostrarMensaje('✓ Simulación creada - Agrega partículas', 'success');
+            } catch(e) {
+                mostrarMensaje('Error: ' + e.message, 'error');
             }
         }
 
-        async function cargarSimulacion(nombreArchivo, btn) {
+        // ===== EJECUTAR SIMULACIÓN =====
+        async function ejecutarSimulacion() {
             try {
-                mostrarMensaje('Cargando simulación...', 'info');
+                if (!currentSim.loaded || !currentSim.personalizado) {
+                    mostrarMensaje('Crea una simulación personalizada', 'error');
+                    return;
+                }
+                mostrarMensaje('Ejecutando...', 'info');
+                const num_pasos = parseInt(document.getElementById('perNumPasos').value) || 300;
+                
+                const res = await fetch('/api/ejecutar_simulacion', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({num_pasos})
+                });
+                
+                if (!res.ok) {
+                    const data = await res.json();
+                    mostrarMensaje(data.error || 'Error', 'error');
+                    return;
+                }
+                
+                const data = await res.json();
+                currentSim.totalFrames = data.total_frames;
+                frameCache.clear();
+                document.getElementById('frameSlider').max = Math.max(1, data.total_frames - 1);
+                document.getElementById('btnEjecutar').style.display = 'none';
+                
+                await mostrarFrame(0);
+                mostrarMensaje(`✓ ${data.total_frames} frames generados`, 'success');
+            } catch(e) {
+                mostrarMensaje('Error: ' + e.message, 'error');
+            }
+        }
+
+        // ===== CARGAR ESCENARIOS =====
+        async function cargarEscenarios() {
+            try {
+                const res = await fetch('/api/escenarios');
+                const esc = await res.json();
+                const lista = document.getElementById('scenariosList');
+                lista.innerHTML = '';
+                esc.forEach(e => {
+                    const btn = document.createElement('button');
+                    btn.className = 'escenario-btn';
+                    btn.innerHTML = `<strong>${e.nombre}</strong>`;
+                    btn.onclick = () => cargarSimulacion(e.nombre_archivo, btn);
+                    lista.appendChild(btn);
+                });
+            } catch(e) { mostrarMensaje('Error', 'error'); }
+        }
+
+        // ===== CARGAR SIMULACIÓN PREDEFINIDA =====
+        async function cargarSimulacion(arch, btn) {
+            try {
+                mostrarMensaje('Cargando...', 'info');
                 document.querySelectorAll('.escenario-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-
-                const response = await fetch(`/api/cargar/${nombreArchivo}`, { method: 'POST' });
-                const data = await response.json();
-
-                if (!response.ok) {
-                    mostrarError(data.error || 'Error al cargar la simulación');
+                
+                const pasos = 300; // Número fijo para predefinidos
+                const res = await fetch(`/api/cargar/${arch}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({num_pasos: pasos})});
+                if (!res.ok) {
+                    const data = await res.json();
+                    mostrarMensaje(data.error || 'Error', 'error');
                     btn.classList.remove('active');
                     return;
                 }
-
-                currentSim.loaded = true;
-                currentSim.totalFrames = data.total_frames;
-                currentSim.currentFrame = 0;
-                currentSim.playing = false;
+                const data = await res.json();
+                currentSim = {loaded: true, totalFrames: data.total_frames, currentFrame: 0, playing: false, speed: 1.0, playToken: currentSim.playToken + 1, escenarioActual: arch, personalizado: false};
                 frameCache.clear();
-                frameInFlight.clear();
-
-                document.getElementById('titulo').textContent = data.nombre;
-                document.getElementById('descripcion').textContent = data.descripcion;
-                document.getElementById('statParticulas').textContent = data.num_particulas;
-                document.getElementById('statTotal').textContent = data.total_frames;
-
-                document.getElementById('frameSlider').max = data.total_frames - 1;
+                document.getElementById('particlesInfo').textContent = data.num_particulas;
+                document.getElementById('frameSlider').max = Math.max(1, data.total_frames - 1);
                 document.getElementById('frameSlider').value = 0;
-
+                document.getElementById('infoTitle').textContent = data.nombre;
+                document.getElementById('infoDesc').textContent = data.descripcion;
+                document.getElementById('infoPanel').style.display = 'block';
+                if (data.particulas && data.particulas.length > 0) {
+                    const tbody = document.getElementById('particlesTable');
+                    tbody.innerHTML = '';
+                    data.particulas.forEach(p => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${p.id}</td><td>${p.masa}</td><td>${p.radio}</td><td>${p.e}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                }
+                document.getElementById('addParticlePanel').style.display = 'none';
                 await mostrarFrame(0);
-                mostrarMensaje('✓ Simulación cargada correctamente', 'success');
-            } catch (error) {
-                mostrarError('Error: ' + error.message);
-                btn.classList.remove('active');
-            }
+                mostrarMensaje(`✓ ${data.total_frames} frames`, 'success');
+            } catch(e) { mostrarMensaje('Error: ' + e.message, 'error'); btn.classList.remove('active'); }
         }
 
-        async function mostrarFrame(frameNum) {
-            if (!currentSim.loaded) {
-                document.getElementById('videoFrame').classList.add('loading');
-                document.getElementById('videoFrame').innerHTML = '<span>Selecciona un escenario para comenzar</span>';
-                return;
-            }
-
+        // ===== CACHÉ Y FRAMES =====
+        async function fetchFrame(n) {
+            if (frameCache.has(n)) return frameCache.get(n);
             try {
-                const videoFrame = document.getElementById('videoFrame');
-                const shouldShowLoader = !videoFrame.querySelector('img');
-                if (shouldShowLoader) {
-                    videoFrame.classList.add('loading');
-                    videoFrame.innerHTML = '<div class="loading-spinner"></div>';
+                const res = await fetch(`/api/frame/${n}`);
+                if (!res.ok) return null;
+                const data = await res.json();
+                frameCache.set(n, data);
+                if (frameCache.size > 25) {
+                    const keys = Array.from(frameCache.keys()).sort((a,b)=>a-b);
+                    while (frameCache.size > 25) frameCache.delete(keys.shift());
                 }
-                
-                const safeFrame = Math.max(0, Math.min(frameNum, currentSim.totalFrames - 1));
-                let data = frameCache.get(safeFrame);
-                if (!data) {
-                    data = await fetchFrame(safeFrame);
-                }
-
-                if (!data || data.error) {
-                    mostrarError(data && data.error ? data.error : 'Error al mostrar frame');
-                    videoFrame.classList.remove('loading');
-                    videoFrame.innerHTML = '<span style="color: #f44336;">Error al cargar frame</span>';
-                    return;
-                }
-
-                videoFrame.classList.remove('loading');
-                const existingImg = videoFrame.querySelector('img');
-                const newImg = new Image();
-                newImg.alt = `Frame ${frameNum}`;
-                newImg.onload = () => {
-                    if (existingImg) {
-                        videoFrame.replaceChild(newImg, existingImg);
-                    } else {
-                        videoFrame.innerHTML = '';
-                        videoFrame.appendChild(newImg);
-                    }
-                };
-                newImg.src = `data:image/png;base64,${data.image}`;
-
-                currentSim.currentFrame = data.frame;
-                document.getElementById('frameValue').textContent = `${data.frame + 1} / ${data.total}`;
-                document.getElementById('frameSlider').value = data.frame;
-                document.getElementById('statFrame').textContent = data.frame + 1;
-
-            } catch (error) {
-                mostrarError('Error al mostrar frame: ' + error.message);
-                const videoFrame = document.getElementById('videoFrame');
-                videoFrame.classList.remove('loading');
-                videoFrame.innerHTML = `<span style="color: #f44336;">${error.message}</span>`;
-            }
+                return data;
+            } catch(e) { return null; }
         }
 
+        async function mostrarFrame(n) {
+            if (!currentSim.loaded) { document.getElementById('simCanvas').innerHTML = '<span>Selecciona escenario</span>'; return; }
+            const frame = Math.max(0, Math.min(n, currentSim.totalFrames - 1));
+            let data = await fetchFrame(frame);
+            if (!data) { document.getElementById('simCanvas').innerHTML = '<span style="color: #f44336;">Error</span>'; return; }
+            const canvas = document.getElementById('simCanvas');
+            const img = canvas.querySelector('img');
+            const newImg = new Image();
+            newImg.onload = () => { if (img) canvas.replaceChild(newImg, img); else { canvas.innerHTML = ''; canvas.appendChild(newImg); } };
+            newImg.src = `data:image/png;base64,${data.image}`;
+            currentSim.currentFrame = data.frame;
+            document.getElementById('frameInfo').textContent = `${data.frame+1}/${data.total}`;
+            document.getElementById('frameSlider').value = data.frame;
+            document.getElementById('frameSliderValue').textContent = `${data.frame+1}/${data.total}`;
+            document.getElementById('timeInfo').textContent = `${(data.frame*0.01).toFixed(2)}s`;
+            document.getElementById('statusInfo').textContent = currentSim.playing ? '▶' : '⏸';
+        }
+
+        // ===== REPRODUCCIÓN =====
         async function reproducir() {
             if (!currentSim.loaded || currentSim.playing) return;
             currentSim.playing = true;
-            const token = ++currentSim.playToken;
-
-            while (currentSim.playing && token === currentSim.playToken) {
-                if (currentSim.currentFrame >= currentSim.totalFrames - 1) {
-                    currentSim.playing = false;
-                    mostrarMensaje('✓ Simulación completada', 'success');
-                    break;
-                }
-
+            const tok = ++currentSim.playToken;
+            while (currentSim.playing && tok === currentSim.playToken) {
+                if (currentSim.currentFrame >= currentSim.totalFrames - 1) { currentSim.playing = false; break; }
+                const t0 = Date.now();
                 await mostrarFrame(currentSim.currentFrame + 1);
-                await sleep(50 / currentSim.speed);
+                const dt = Date.now() - t0;
+                const wait = Math.max(0, (33 / currentSim.speed) - dt);
+                if (wait > 0) await new Promise(r => setTimeout(r, wait));
             }
         }
 
-        function pausar() {
-            currentSim.playing = false;
-            currentSim.playToken += 1;
+        function pausar() { currentSim.playing = false; currentSim.playToken++; document.getElementById('statusInfo').textContent = '⏸'; }
+        async function siguiente() { pausar(); if (currentSim.currentFrame < currentSim.totalFrames - 1) await mostrarFrame(currentSim.currentFrame + 1); }
+        async function anterior() { pausar(); if (currentSim.currentFrame > 0) await mostrarFrame(currentSim.currentFrame - 1); }
+        function actualizarVelocidad() { currentSim.speed = parseFloat(document.getElementById('speedSlider').value); document.getElementById('speedValue').textContent = `${currentSim.speed}x`; }
+        async function irAFrame() { pausar(); const n = parseInt(document.getElementById('frameSlider').value); await mostrarFrame(n); }
+
+        // ===== AGREGAR PARTÍCULA =====
+        async function enviarAgregarParticula() {
+            try {
+                if (!currentSim.loaded) { mostrarMensaje('Carga escenario', 'error'); return; }
+                const res = await fetch('/api/agregar_particula', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        posicion: [parseFloat(document.getElementById('newPosX').value), parseFloat(document.getElementById('newPosY').value)],
+                        velocidad: [parseFloat(document.getElementById('newVelX').value), parseFloat(document.getElementById('newVelY').value)],
+                        masa: parseFloat(document.getElementById('newMasa').value),
+                        radio: parseFloat(document.getElementById('newRadio').value),
+                        e: parseFloat(document.getElementById('newE').value),
+                        color: 'blue'
+                    })
+                });
+                if (!res.ok) { const d = await res.json(); mostrarMensaje(d.error || 'Error', 'error'); return; }
+                const d = await res.json();
+                mostrarMensaje(`✓ Partícula agregada (ID: ${d.particula.id})`, 'success');
+                cerrarModalAgregar();
+                document.getElementById('particlesInfo').textContent = d.num_particulas;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${d.particula.id}</td><td>${d.particula.masa}</td><td>${d.particula.radio}</td><td>${d.particula.e}</td>`;
+                document.getElementById('particlesTable').appendChild(tr);
+            } catch(e) { mostrarMensaje('Error: ' + e.message, 'error'); }
         }
 
-        async function siguiente() {
-            pausar();
-            if (currentSim.currentFrame < currentSim.totalFrames - 1) {
-                await mostrarFrame(currentSim.currentFrame + 1);
-            }
-        }
-
-        async function anterior() {
-            pausar();
-            if (currentSim.currentFrame > 0) {
-                await mostrarFrame(currentSim.currentFrame - 1);
-            }
-        }
-
-        function cambiarVelocidad(valor) {
-            document.getElementById('speedSlider').value = valor;
-            actualizarVelocidad();
-        }
-
-        function actualizarVelocidad() {
-            const slider = document.getElementById('speedSlider');
-            currentSim.speed = parseFloat(slider.value);
-            document.getElementById('speedValue').textContent = `${currentSim.speed}x`;
-        }
-
-        async function irAFrame() {
-            pausar();
-            const frameNum = parseInt(document.getElementById('frameSlider').value);
-            await mostrarFrame(frameNum);
-        }
-
-        function mostrarMensaje(texto, tipo = 'info') {
-            const messagesDiv = document.getElementById('messages');
-            const msg = document.createElement('div');
-            msg.className = `message ${tipo}`;
-            msg.textContent = texto;
-            messagesDiv.appendChild(msg);
-
-            setTimeout(() => msg.remove(), 3000);
-        }
-
-        function mostrarError(texto) {
-            mostrarMensaje(texto, 'error');
-        }
-
-        // Inicializar
         cargarEscenarios();
     </script>
 </body>

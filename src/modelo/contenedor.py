@@ -1,69 +1,172 @@
-"""Contenedor: gestiona el dominio y colisiones con fronteras."""
+"""Contenedor: Gestión del dominio y colisiones con fronteras.
+
+MÓDULO 5: MEDIDOR DE PRESIÓN MACROSCÓPICA
+==========================================
+
+El contenedor calcula la presión mediante detección de impulsos en las fronteras.
+Cada rebote transfiere cantidad de movimiento a las paredes, que se acumula
+en cada paso y se convierte en presión macroscópica.
+
+Cálculo de Presión:
+==================
+Presión Instantánea = (Impulso_pared / dt) / Perímetro
+
+Donde:
+- Impulso_pared: Suma de cambios de momento en colisiones con paredes (kg·m/s)
+- dt: Paso temporal (s)
+- Perímetro: Perímetro del contenedor rectangular (m)
+
+Resultado:
+- Unidades: (kg·m/s) / (s × m) = kg/(m·s²) = Pa ✓
+- Significado: Fuerza por unidad de área en las paredes
+- Comportamiento: P ↑ con temperatura (gas más rápido)
+- Comportamiento: P ↓ con enfriamiento (gas más lento)
+"""
 
 import numpy as np
+from typing import Tuple
 from .particula import Particula
 
 
 class Contenedor:
-    """Dominio rectangular con límites que rebotan partículas."""
+    """Dominio rectangular que gestiona límites y calcula presión macroscópica.
+    
+    El contenedor define un dominio rectangular [0, ancho] × [0, alto]
+    donde las partículas rebotan elásticamente (o inelásticamente según e).
+    
+    MÓDULO 5: Se calcula la presión acumulando impulsos en cada paso.
+    
+    Atributos:
+    ==========
+    - ancho, alto: Dimensiones del dominio (m)
+    - e_pared: Coef. restitución para rebotes en paredes (0-1)
+    - perimetro: 2*(ancho + alto) - necesario para calcular presión
+    """
     
     def __init__(self, ancho: float, alto: float, coef_restitution_pared: float = 0.9) -> None:
-        """Inicializa contenedor.
+        """Inicializa contenedor rectangular.
         
         Args:
-            ancho: Ancho del dominio en metros
-            alto: Alto del dominio en metros
-            coef_restitution_pared: e para rebote en paredes
+            ancho: Ancho del dominio en metros (eje X: [0, ancho])
+            alto: Alto del dominio en metros (eje Y: [0, alto])
+            coef_restitution_pared: Coef. restitución para rebotes en paredes.
+                                   Default: 0.9 (ligeramente inelástico)
+                                   Rango: [0, 1] (automáticamente clampado)
         """
-        self.ancho = ancho
-        self.alto = alto
-        self.e_pared = np.clip(coef_restitution_pared, 0.0, 1.0)
-        # Perímetro total para cálculos macroscópicos (presión)
-        self.perimetro = 2.0 * (self.ancho + self.alto)
+        self.ancho: float = float(ancho)
+        self.alto: float = float(alto)
+        self.e_pared: float = float(np.clip(coef_restitution_pared, 0.0, 1.0))
+        
+        # Perímetro total: necesario para cálculo de presión (Módulo 5)
+        self.perimetro: float = 2.0 * (self.ancho + self.alto)
     
     def detectar_colision_frontera(self, particula: Particula) -> bool:
-        """Retorna True si partícula toca alguna frontera."""
-        x, y = particula.posicion
-        r = particula.radio
+        """Detecta si una partícula está tocando alguna frontera.
         
-        toca_x = x - r <= 0 or x + r >= self.ancho
-        toca_y = y - r <= 0 or y + r >= self.alto
+        Una partícula toca frontera si:
+        - Pared izquierda: x - r ≤ 0
+        - Pared derecha: x + r ≥ ancho
+        - Pared inferior: y - r ≤ 0
+        - Pared superior: y + r ≥ alto
+        
+        Args:
+            particula: Partícula a verificar
+            
+        Returns:
+            bool: True si está tocando alguna frontera
+        """
+        x: float = particula.posicion[0]
+        y: float = particula.posicion[1]
+        r: float = particula.radio
+        
+        # Verifica si toca paredes verticales (x)
+        toca_x: bool = (x - r <= 0) or (x + r >= self.ancho)
+        
+        # Verifica si toca paredes horizontales (y)
+        toca_y: bool = (y - r <= 0) or (y + r >= self.alto)
         
         return toca_x or toca_y
     
     def resolver_colision_frontera(self, particula: Particula) -> float:
-        """Resuelve rebote contra fronteras in-place.
+        """Resuelve rebote contra fronteras y retorna impulso transferido.
         
-        Retorna:
-            Impulso total transferido a las paredes (magnitud), en kg·m/s.
+        MÓDULO 5: PRESIÓN MACROSCÓPICA
+        ==============================
+        
+        Este método implementa rebotes contra las 4 paredes del contenedor.
+        Cada rebote transfiere impulso a la pared, que se acumula para
+        calcular la presión instantánea: P = Impulso / (dt × perímetro)
+        
+        ALGORITMO DE REBOTE:
+        ====================
+        Para cada pared que toca:
+        
+        1. Reposicionar: Corregir posición para evitar penetración
+        2. Invertir velocidad normal: v_new = -e * v_old (considerando e)
+        3. Calcular impulso: Δp = m × |v_new - v_old| en dirección normal
+        
+        FÓRMULA DE IMPULSO:
+        ===================
+        Impulso = |m × (v_final - v_inicial)|
+        
+        Para una pared: v_x final = -e_pared × v_x inicial
+        Impulso_pared = m × |(-e_pared × v - v)| = m × v × (1 + e_pared)
+        
+        Esto acumula el cambio de momento transferido a la pared.
+        
+        CASOS ESPECIALES:
+        =================
+        - e_pared = 1.0: Rebote perfectamente elástico (sin disipación)
+        - e_pared < 1.0: Rebote inelástico (disipación de energía)
+        - Esquinas: Se manejan dos rebotes (x e y) en el mismo paso
+        
+        Args:
+            particula: Partícula a hacer rebotar (se modifica in-place)
+            
+        Returns:
+            float: Impulso total transferido a las paredes en kg·m/s
         """
-        x, y = particula.posicion
-        vx, vy = particula.velocidad
-        r = particula.radio
-        impulso_total = 0.0
+        x: float = particula.posicion[0]
+        y: float = particula.posicion[1]
+        vx: float = particula.velocidad[0]
+        vy: float = particula.velocidad[1]
+        r: float = particula.radio
+        m: float = particula.masa
         
-        # Paredes verticales (x)
+        impulso_total: float = 0.0
+        
+        # ========== COLISIONES CON PAREDES VERTICALES (x) ==========
         if x - r <= 0:
+            # PARED IZQUIERDA (x = 0)
             particula.posicion[0] = r
+            # Velocidad rebota: vx_new = e × |vx_old| (hacia la derecha)
             particula.velocidad[0] = abs(vx) * self.e_pared
-            # Impulso normal transferido a la pared izquierda
-            impulso_total += abs(particula.masa * (particula.velocidad[0] - vx))
+            # Impulso transferido: cambio de momento en dirección normal
+            impulso_total += abs(m * (particula.velocidad[0] - vx))
+            
         elif x + r >= self.ancho:
+            # PARED DERECHA (x = ancho)
             particula.posicion[0] = self.ancho - r
+            # Velocidad rebota: vx_new = -e × |vx_old| (hacia la izquierda)
             particula.velocidad[0] = -abs(vx) * self.e_pared
-            # Impulso normal transferido a la pared derecha
-            impulso_total += abs(particula.masa * (particula.velocidad[0] - vx))
+            # Impulso transferido
+            impulso_total += abs(m * (particula.velocidad[0] - vx))
         
-        # Paredes horizontales (y)
+        # ========== COLISIONES CON PAREDES HORIZONTALES (y) ==========
         if y - r <= 0:
+            # PARED INFERIOR (y = 0)
             particula.posicion[1] = r
+            # Velocidad rebota: vy_new = e × |vy_old| (hacia arriba)
             particula.velocidad[1] = abs(vy) * self.e_pared
-            # Impulso normal transferido a la pared inferior
-            impulso_total += abs(particula.masa * (particula.velocidad[1] - vy))
+            # Impulso transferido
+            impulso_total += abs(m * (particula.velocidad[1] - vy))
+            
         elif y + r >= self.alto:
+            # PARED SUPERIOR (y = alto)
             particula.posicion[1] = self.alto - r
+            # Velocidad rebota: vy_new = -e × |vy_old| (hacia abajo)
             particula.velocidad[1] = -abs(vy) * self.e_pared
-            # Impulso normal transferido a la pared superior
-            impulso_total += abs(particula.masa * (particula.velocidad[1] - vy))
+            # Impulso transferido
+            impulso_total += abs(m * (particula.velocidad[1] - vy))
 
         return float(impulso_total)

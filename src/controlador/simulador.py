@@ -164,16 +164,24 @@ class Simulador:
         for i in range(num_frames_existentes):
             if i < len(self.historico_posiciones):
                 # Agregar posición inicial a frame anterior
-                self.historico_posiciones[i] = np.vstack([
-                    self.historico_posiciones[i],
-                    posicion.copy()
-                ])
+                frame_pos = np.asarray(self.historico_posiciones[i])
+                if frame_pos.size == 0:
+                    self.historico_posiciones[i] = np.array([posicion.copy()])
+                else:
+                    self.historico_posiciones[i] = np.vstack([
+                        frame_pos,
+                        posicion.copy()
+                    ])
             if i < len(self.historico_velocidades):
                 # Agregar velocidad 0 a frame anterior
-                self.historico_velocidades[i] = np.vstack([
-                    self.historico_velocidades[i],
-                    np.array([0.0, 0.0])
-                ])
+                frame_vel = np.asarray(self.historico_velocidades[i])
+                if frame_vel.size == 0:
+                    self.historico_velocidades[i] = np.array([[0.0, 0.0]])
+                else:
+                    self.historico_velocidades[i] = np.vstack([
+                        frame_vel,
+                        np.array([0.0, 0.0])
+                    ])
     
     def calcular_momento_total(self) -> float:
         """Calcula la magnitud del momento lineal total.
@@ -266,10 +274,11 @@ class Simulador:
         
         Paso 4. CÁLCULO DE PRESIÓN (MÓDULO 5):
         ──────────────────────────────────────
-        Presión instantánea:
+        Presión lineal instantánea:
         P = Impulso_pared / (dt × perímetro_contenedor)
         
-        Unidades: Pa = (kg·m/s) / (s × m) = kg/(m·s²) = Pa ✓
+        Unidades: N/m = (kg·m/s) / (s × m)
+        (equivale a Pa si se asume profundidad unitaria)
         
         Interpretación física:
         - Más colisiones con paredes → Mayor presión

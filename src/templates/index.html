@@ -125,6 +125,13 @@
                     </div>
                     <div><label class="control-label">Velocidad</label><div class="slider-container"><input type="range" id="speedSlider" min="0.5" max="2" step="0.5" value="1" onchange="actualizarVelocidad()"><span class="slider-value" id="speedValue">1x</span></div></div>
                     <div><label class="control-label">Frame</label><input type="range" id="frameSlider" min="0" max="100" value="0" onchange="irAFrame()"><div style="text-align: center; margin-top: 2px;"><span class="info-value" id="frameSliderValue" style="font-size: 10px;">1/100</span></div></div>
+                    <div>
+                        <label class="control-label">Térmico</label>
+                        <div class="button-group">
+                            <button class="btn" onclick="calentarGas()">🔥 Calentar</button>
+                            <button class="btn" onclick="enfriarGas()">❄ Enfriar</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -383,6 +390,39 @@
         async function anterior() { pausar(); if (currentSim.currentFrame > 0) await mostrarFrame(currentSim.currentFrame - 1); }
         function actualizarVelocidad() { currentSim.speed = parseFloat(document.getElementById('speedSlider').value); document.getElementById('speedValue').textContent = `${currentSim.speed}x`; }
         async function irAFrame() { pausar(); const n = parseInt(document.getElementById('frameSlider').value); await mostrarFrame(n); }
+
+        // ===== CONTROL TÉRMICO =====
+        async function aplicarTermico(factor, etiqueta) {
+            try {
+                if (!currentSim.loaded) { mostrarMensaje('Carga un escenario', 'error'); return; }
+                pausar();
+                const res = await fetch('/api/termico', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({factor})
+                });
+                if (!res.ok) { const d = await res.json(); mostrarMensaje(d.error || 'Error térmico', 'error'); return; }
+                const data = await res.json();
+                currentSim.totalFrames = data.total_frames;
+                currentSim.currentFrame = 0;
+                frameCache.clear();
+                document.getElementById('frameSlider').max = Math.max(1, data.total_frames - 1);
+                await mostrarFrame(0);
+                mostrarMensaje(`✓ ${etiqueta}`, 'success');
+            } catch(e) {
+                mostrarMensaje('Error térmico: ' + e.message, 'error');
+            }
+        }
+
+        function calentarGas() { aplicarTermico(1.5, 'Gas calentado'); }
+        function enfriarGas() { aplicarTermico(0.8, 'Gas enfriado'); }
+
+        document.addEventListener('keydown', (e) => {
+            const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : '';
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+            if (e.key === 'k' || e.key === 'K') calentarGas();
+            if (e.key === 'l' || e.key === 'L') enfriarGas();
+        });
 
         // ===== AGREGAR PARTÍCULA =====
         async function enviarAgregarParticula() {

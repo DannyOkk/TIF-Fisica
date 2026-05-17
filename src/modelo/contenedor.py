@@ -9,7 +9,7 @@ en cada paso y se convierte en presión macroscópica.
 
 Cálculo de Presión:
 ==================
-Presión Instantánea = (Impulso_pared / dt) / Perímetro
+Presión lineal instantánea = (Impulso_pared / dt) / Perímetro
 
 Donde:
 - Impulso_pared: Suma de cambios de momento en colisiones con paredes (kg·m/s)
@@ -17,8 +17,9 @@ Donde:
 - Perímetro: Perímetro del contenedor rectangular (m)
 
 Resultado:
-- Unidades: (kg·m/s) / (s × m) = kg/(m·s²) = Pa ✓
-- Significado: Fuerza por unidad de área en las paredes
+- Unidades: (kg·m/s) / (s × m) = N/m (presión lineal)
+- Interpretación: Fuerza por unidad de longitud; equivale a Pa si se asume
+    profundidad unitaria (1 m) en el eje fuera del plano
 - Comportamiento: P ↑ con temperatura (gas más rápido)
 - Comportamiento: P ↓ con enfriamiento (gas más lento)
 """
@@ -95,7 +96,7 @@ class Contenedor:
         
         Este método implementa rebotes contra las 4 paredes del contenedor.
         Cada rebote transfiere impulso a la pared, que se acumula para
-        calcular la presión instantánea: P = Impulso / (dt × perímetro)
+        calcular la presión lineal instantánea: P = Impulso / (dt × perímetro)
         
         ALGORITMO DE REBOTE:
         ====================

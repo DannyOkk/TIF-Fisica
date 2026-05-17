@@ -334,8 +334,8 @@ class Visualizador:
         
         Muestra frame-a-frame la sustitución de valores en dos ecuaciones clave:
         
-        1. MOMENTO LINEAL TOTAL (CONSERVADO en colisiones)
-           P_total = (m₁·vₓ₁) + (m₂·vₓ₂) = [Resultado] kg·m/s
+          1. MOMENTO LINEAL TOTAL (CONSERVADO en colisiones)
+              P_total = √[(Σ m_i·v_{xi})² + (Σ m_i·v_{yi})²] = [Resultado] kg·m/s
            
            El usuario observa cómo las velocidades vₓ cambien en el impacto,
            pero el RESULTADO TOTAL permanece exactamente constante (salvo en
@@ -362,7 +362,9 @@ class Visualizador:
         m1: float = float(p1.masa)
         m2: float = float(p2.masa)
         vx1: float = float(p1.velocidad[0])
+        vy1: float = float(p1.velocidad[1])
         vx2: float = float(p2.velocidad[0])
+        vy2: float = float(p2.velocidad[1])
         
         # Magnitudes de velocidad (para Energía)
         v1: float = float(np.linalg.norm(p1.velocidad))
@@ -371,23 +373,29 @@ class Visualizador:
         # Contribución del resto de partículas (para mantener igualdad)
         resto: List[Particula] = particulas[2:]
         p_resto_x: float = sum(p.masa * p.velocidad[0] for p in resto)
+        p_resto_y: float = sum(p.masa * p.velocidad[1] for p in resto)
         ek_resto: float = sum(0.5 * p.masa * np.dot(p.velocidad, p.velocidad) for p in resto)
         
         # Totales calculados
         p_total_x: float = m1 * vx1 + m2 * vx2 + p_resto_x
+        p_total_y: float = m1 * vy1 + m2 * vy2 + p_resto_y
+        p_total_mag: float = float(np.sqrt(p_total_x ** 2 + p_total_y ** 2))
         ek_total: float = 0.5 * m1 * (v1 ** 2) + 0.5 * m2 * (v2 ** 2) + ek_resto
 
         # Formateo de término adicional si hay más de 2 partículas
-        resto_p_str: str = f" + ({p_resto_x:.2f})" if resto else ""
+        resto_p_str_x: str = f" + ({p_resto_x:.2f})" if resto else ""
+        resto_p_str_y: str = f" + ({p_resto_y:.2f})" if resto else ""
         resto_ek_str: str = f" + ({ek_resto:.2f})" if resto else ""
 
         # ========== ECUACIÓN 1: MOMENTO LINEAL TOTAL ==========
         linea_p: str = (
-            r"$P_{total} = (m_1 v_{x1}) + (m_2 v_{x2})"
-                + resto_p_str
-                + rf" = ({m1:.2f} \cdot {vx1:.2f}) + ({m2:.2f} \cdot {vx2:.2f})"
-                + resto_p_str
-                + rf" = {p_total_x:.2f}\,\mathrm{{kg\,m/s}}$"
+            r"$P_{total} = \sqrt{(m_1 v_{x1} + m_2 v_{x2}"
+                + resto_p_str_x
+                + r")^2 + (m_1 v_{y1} + m_2 v_{y2}"
+                + resto_p_str_y
+                + r")^2}"
+                + rf" = \sqrt{{({p_total_x:.2f})^2 + ({p_total_y:.2f})^2}}"
+                + rf" = {p_total_mag:.2f}\,\mathrm{{kg\,m/s}}$"
         )
         
         # ========== ECUACIÓN 2: ENERGÍA CINÉTICA TOTAL ==========
@@ -446,7 +454,7 @@ class Visualizador:
 
         # ========== MÓDULO 5: ACTUALIZAR PRESIÓN MACROSCÓPICA ==========
         texto_presion: str = (
-            f"💨 Presión Macroscópica: {presion:.2f} Pa\n"
+            f"💨 Presión lineal: {presion:.2f} N/m\n"
             f"   [Impulso/Perímetro/dt]"
         )
         
@@ -542,8 +550,8 @@ class Visualizador:
            - Enfriar Gas (×0.8): Extrae energía instantáneamente
            - Ubicación: Parte inferior de la interfaz
         
-        5. PRESIÓN MACROSCÓPICA:
-           - Cálculo instantáneo de P = Impulso / (dt × perímetro)
+          5. PRESIÓN MACROSCÓPICA:
+              - Cálculo instantáneo de P_lineal = Impulso / (dt × perímetro)
            - Ubicación: Abajo-izquierda del panel principal
         
         CONTROLES INTERACTIVOS:

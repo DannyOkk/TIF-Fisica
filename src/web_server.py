@@ -18,6 +18,7 @@ matplotlib.use('Agg')  # Backend sin GUI
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 from matplotlib.gridspec import GridSpec
+from matplotlib.colors import LinearSegmentedColormap
 from io import BytesIO
 import base64
 import traceback
@@ -30,8 +31,33 @@ current_sim = {
     'historico': None,
     'frame': 0,
     'paused': True,
-    'speed': 1.0
+    'speed': 1.0,
+    'num_pasos': 0,
+    'initial_particles': []
 }
+
+TERMICO_COLORMAP = LinearSegmentedColormap.from_list(
+    "termico",
+    ["#1f77ff", "#f7d154", "#d62728"]
+)
+
+def _capturar_estado_inicial(simulador: Simulador) -> list:
+    """Captura el estado inicial para reconstrucciones térmicas."""
+    particulas = []
+    pos0 = simulador.historico_posiciones[0] if simulador.historico_posiciones else []
+    vel0 = simulador.historico_velocidades[0] if simulador.historico_velocidades else []
+    for i, p in enumerate(simulador.particulas):
+        posicion = pos0[i].tolist() if i < len(pos0) else p.posicion.tolist()
+        velocidad = vel0[i].tolist() if i < len(vel0) else p.velocidad.tolist()
+        particulas.append({
+            'posicion': posicion,
+            'velocidad': velocidad,
+            'masa': p.masa,
+            'radio': p.radio,
+            'e': p.coef_restitution,
+            'color': p.color
+        })
+    return particulas
 
 def cargar_escenario(nombre_archivo, num_pasos=300):
     """Carga un escenario JSON y retorna simulador.
@@ -104,19 +130,34 @@ def generar_frame_base64(simulador, frame_num):
         # ===== IZQUIERDA ARRIBA: SIMULACIÓN 2D MÁS GRANDE =====
         ax_sim = fig.add_subplot(gs[0:2, 0:16])  # 16 columnas en izquierda, 2 filas
         historico = simulador.historico_posiciones[frame_num]
-        colores = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
-                  '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+        velocidades_frame = simulador.historico_velocidades[frame_num] if frame_num < len(simulador.historico_velocidades) else []
+        velocidades_mag = [np.linalg.norm(v) for v in velocidades_frame] if velocidades_frame else []
+        vmax = max(velocidades_mag) if velocidades_mag else 1.0
+        vmax = max(vmax, 1e-6)
         
         for i, p in enumerate(simulador.particulas):
+            vmag = velocidades_mag[i] if i < len(velocidades_mag) else 0.0
+            indice_color = min(vmag / vmax, 1.0)
+            color = TERMICO_COLORMAP(indice_color)
             circle = plt.Circle(
                 historico[i],
                 p.radio,
-                facecolor=colores[i % len(colores)],
+                facecolor=color,
                 alpha=0.85,
                 edgecolor='black',
                 linewidth=1.5
             )
             ax_sim.add_patch(circle)
+            ax_sim.text(
+                historico[i][0],
+                historico[i][1],
+                str(p.id),
+                ha='center',
+                va='center',
+                fontsize=9,
+                color='white',
+                fontweight='bold'
+            )
         
         ax_sim.set_xlim(-0.5, simulador.contenedor.ancho + 0.5)
         ax_sim.set_ylim(-0.5, simulador.contenedor.alto + 0.5)
@@ -133,13 +174,33 @@ def generar_frame_base64(simulador, frame_num):
         ax_formulas.axis('off')
         
         # Construir texto de fórmulas con valores actuales
-        if frame_num > 0 and len(simulador.historico_velocidades[frame_num]) > 0:
+        if frame_num >= 0 and len(simulador.historico_velocidades[frame_num]) > 0:
             vel_actual = simulador.historico_velocidades[frame_num]
             mom_actual = simulador.historico_momentos[frame_num]
             ene_actual = simulador.historico_energias[frame_num]
             pres_actual = simulador.presion_actual
-            
-            texto = f"""Momento Total: |P| = {mom_actual:.4f} kg·m/s  |  Energía: E = {ene_actual:.4f} J  |  Presión: P = {pres_actual:.2f} Pa"""
+
+            px_total = 0.0
+            py_total = 0.0
+            for i, p in enumerate(simulador.particulas):
+                if i < len(vel_actual):
+                    px_total += p.masa * vel_actual[i][0]
+                    py_total += p.masa * vel_actual[i][1]
+
+            linea_p = (
+                 r"$P_{total} = \sqrt{(\sum m_i v_{xi})^2 + (\sum m_i v_{yi})^2}"
+                 + rf" = \sqrt{{({px_total:.2f})^2 + ({py_total:.2f})^2}}"
+                + rf" = {mom_actual:.2f}\,\mathrm{{kg\,m/s}}$"
+            )
+            linea_ek = (
+                r"$E_k = \sum \frac{1}{2} m_i v_i^2"
+                + rf" = {ene_actual:.2f}\,\mathrm{{J}}$"
+            )
+            linea_pres = (
+                r"$P_{lineal} = \frac{\Delta p}{dt\,\cdot\,\mathrm{perimetro}}"
+                + rf" = {pres_actual:.2f}\,\mathrm{{N/m}}$"
+            )
+            texto = f"{linea_p}\n{linea_ek}\n{linea_pres}"
         else:
             texto = "Cálculos en progreso..."
         
@@ -248,6 +309,8 @@ def cargar_simulacion(nombre_archivo):
         current_sim['frame'] = 0
         current_sim['paused'] = True
         current_sim['speed'] = 1.0
+        current_sim['num_pasos'] = num_pasos
+        current_sim['initial_particles'] = _capturar_estado_inicial(simulador)
         
         # Construir información detallada de partículas
         particulas_info = []
@@ -320,7 +383,7 @@ def obtener_magnitudes(frame_num):
         
         # Construir desglose de momento
         desglose_momento = []
-        momento_total = 0
+        momento_total_vec = np.array([0.0, 0.0])
         for i, p in enumerate(sim.particulas):
             if i < len(vel_frame):
                 vx = vel_frame[i][0] if len(vel_frame[i]) > 0 else 0
@@ -329,7 +392,7 @@ def obtener_magnitudes(frame_num):
                 px = p.masa * vx
                 py = p.masa * vy
                 p_mag = np.sqrt(px**2 + py**2)
-                momento_total += p_mag
+                momento_total_vec += np.array([px, py])
                 desglose_momento.append({
                     'particula': i + 1,
                     'masa': round(p.masa, 2),
@@ -356,6 +419,7 @@ def obtener_magnitudes(frame_num):
                     'ek': round(ek, 4)
                 })
         
+        momento_total = float(np.linalg.norm(momento_total_vec))
         return jsonify({
             'frame': frame_num,
             'momento': {
@@ -392,6 +456,8 @@ def nueva_simulacion():
         current_sim['frame'] = 0
         current_sim['paused'] = True
         current_sim['speed'] = 1.0
+        current_sim['num_pasos'] = 0
+        current_sim['initial_particles'] = _capturar_estado_inicial(simulador)
         
         return jsonify({
             'success': True,
@@ -420,6 +486,8 @@ def ejecutar_simulacion():
         # Ejecutar pasos sin mostrar (solo calcular)
         for _ in range(num_pasos):
             sim.paso_simulacion()
+
+        current_sim['num_pasos'] = num_pasos
         
         # Limpiar caché de frames
         from flask import current_app
@@ -469,9 +537,16 @@ def agregar_particula():
             coef_restitution=e,
             color=color
         )
-        
-        # ✅ LIMPIAR CACHÉ DE FRAMES - la nueva partícula cambia todos los frames
-        frame_cache.clear()
+
+        if isinstance(current_sim.get('initial_particles'), list):
+            current_sim['initial_particles'].append({
+                'posicion': posicion.tolist(),
+                'velocidad': velocidad.tolist(),
+                'masa': masa,
+                'radio': radio,
+                'e': e,
+                'color': color
+            })
         
         return jsonify({
             'success': True,
@@ -491,6 +566,68 @@ def agregar_particula():
     except Exception as e:
         print(f"❌ Error agregar_particula: {e}")
         return jsonify({'error': 'Error al agregar'}), 500
+
+
+@app.route('/api/termico', methods=['POST'])
+def control_termico():
+    """Aplica escalado térmico a la simulación y recalcula frames."""
+    try:
+        sim = current_sim['simulador']
+        if sim is None:
+            return jsonify({'error': 'Sin simulación cargada'}), 400
+
+        datos = request.get_json() or {}
+        factor = float(datos.get('factor', 1.0))
+        if factor <= 0:
+            return jsonify({'error': 'Factor inválido'}), 400
+
+        num_pasos = current_sim.get('num_pasos', 0)
+        if num_pasos <= 0:
+            return jsonify({'error': 'Ejecuta la simulación primero'}), 400
+
+        inicial = current_sim.get('initial_particles')
+        if not inicial:
+            inicial = _capturar_estado_inicial(sim)
+
+        for p in inicial:
+            p['velocidad'] = [v * factor for v in p['velocidad']]
+
+        contenedor = Contenedor(
+            ancho=sim.contenedor.ancho,
+            alto=sim.contenedor.alto,
+            coef_restitution_pared=sim.contenedor.e_pared
+        )
+        simulador = Simulador(
+            contenedor,
+            dt=sim.dt,
+            ancho_dominio=sim.contenedor.ancho,
+            alto_dominio=sim.contenedor.alto
+        )
+
+        for p in inicial:
+            simulador.agregar_particula(
+                posicion=np.array(p['posicion'], dtype=float),
+                velocidad=np.array(p['velocidad'], dtype=float),
+                masa=p['masa'],
+                radio=p['radio'],
+                coef_restitution=p['e'],
+                color=p['color']
+            )
+
+        simulador.ejecutar(num_pasos, mostrar=False)
+
+        current_sim['simulador'] = simulador
+        current_sim['frame'] = 0
+        current_sim['paused'] = True
+        current_sim['initial_particles'] = inicial
+
+        return jsonify({
+            'success': True,
+            'total_frames': len(simulador.historico_posiciones)
+        })
+    except Exception as e:
+        print(f"❌ Error control_termico: {e}")
+        return jsonify({'error': 'Error térmico'}), 500
 
 
 @app.route('/api/controles', methods=['POST'])

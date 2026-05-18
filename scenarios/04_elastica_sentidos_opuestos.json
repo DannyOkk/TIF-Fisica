@@ -1,6 +1,6 @@
 {
   "nombre": "Caso B: Examen - Sentido contrario",
-  "descripcion": "Choque elástico: v1=6 m/s, v2=-4 m/s → Esperado: vf1=-0.67 m/s, vf2=9.33 m/s. Masas m1=4kg, m2=2kg, e=1.0",
+  "descripcion": "EJERCICIO EXAMEN (Caso B): Dos partículas de diferente masa chocan de frente. Partícula roja: m₁=4kg, v₁=+6 m/s (hacia la derecha, desde x=3m). Partícula azul: m₂=2kg, v₂=-4 m/s (hacia la izquierda, desde x=7m). Choque perfectamente elástico (e=1.0). CALCULAR: velocidades finales vf1 y vf2. VERIFICAR: conservación de momento P_inicial = P_final. RESULTADO ESPERADO: vf1≈-0.67 m/s, vf2≈9.33 m/s.",
   "dt": 0.01,
   "ancho_dominio": 10.0,
   "alto_dominio": 10.0,

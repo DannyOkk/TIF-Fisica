@@ -1,6 +1,6 @@
 {
   "nombre": "Caso A: Examen - Mismo sentido",
-  "descripcion": "Choque elástico: v1=8 m/s, v2=4 m/s → Esperado: vf1=5.33 m/s, vf2=9.34 m/s. Masas m1=4kg, m2=2kg, e=1.0",
+  "descripcion": "EJERCICIO EXAMEN (Caso A): Dos partículas viajan en el mismo sentido. Partícula roja (más rápida): m₁=4kg, v₁=+8 m/s (desde x=3m). Partícula azul (más lenta): m₂=2kg, v₂=+4 m/s (desde x=7m). La roja alcanza a la azul. Choque elástico (e=1.0). CALCULAR: velocidades finales vf1 y vf2. VERIFICAR: momento y energía se conservan. RESULTADO ESPERADO: vf1≈5.33 m/s, vf2≈9.34 m/s.",
   "dt": 0.01,
   "ancho_dominio": 10.0,
   "alto_dominio": 10.0,

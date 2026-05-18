@@ -1,6 +1,6 @@
 """Contenedor: Gestión del dominio y colisiones con fronteras.
 
-MÓDULO 5: MEDIDOR DE PRESIÓN MACROSCÓPICA
+     MEDIDOR DE PRESIÓN MACROSCÓPICA
 ==========================================
 
 El contenedor calcula la presión mediante detección de impulsos en las fronteras.

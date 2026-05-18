@@ -11,8 +11,8 @@ import json
 import numpy as np
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify
-from src.modelo.contenedor import Contenedor
-from src.controlador.simulador import Simulador
+from src.model.contenedor import Contenedor
+from src.controller.simulador import Simulador
 import matplotlib
 matplotlib.use('Agg')  # Backend sin GUI
 import matplotlib.pyplot as plt

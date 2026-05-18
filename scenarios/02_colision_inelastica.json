@@ -1,6 +1,6 @@
 {
   "nombre": "Colisión Inelástica",
-  "descripcion": "Masas diferentes, coeficiente de restitución parcial e=0.6. Momento se conserva, energía disminuye.",
+  "descripcion": "EJERCICIO: Una esfera roja (m=2kg) viaja a 4 m/s hacia la derecha desde x=2m. Choca con una esfera azul (m=1kg) que viaja a 1 m/s hacia la izquierda desde x=8m. El choque es parcialmente inelástico (e=0.6). Verificar que el momento lineal se conserva, pero la energía cinética disminuye. Estimar la energía disipada en el proceso.",
   "dt": 0.01,
   "ancho_dominio": 10.0,
   "alto_dominio": 10.0,

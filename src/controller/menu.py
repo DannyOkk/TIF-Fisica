@@ -4,8 +4,8 @@ import numpy as np
 import json
 from typing import List, Tuple
 from pathlib import Path
-from src.modelo.contenedor import Contenedor
-from src.controlador import Simulador
+from src.model.contenedor import Contenedor
+from src.controller.simulador import Simulador
 
 
 class Menu:
@@ -32,21 +32,7 @@ class Menu:
         )
     
     def _cargar_escenario_json(self, archivo_json: str) -> None:
-        """Carga escenario desde archivo JSON.
-        
-        Formato JSON esperado:
-        {
-          "nombre": "Nombre del escenario",
-          "dt": 0.01,
-          "ancho_dominio": 10.0,
-          "alto_dominio": 10.0,
-          "pasos": 300,
-          "particulas": [
-            {"posicion": [x, y], "velocidad": [vx, vy], "masa": m,
-             "radio": r, "e": restitution, "color": "color"}
-          ]
-        }
-        """
+        """Carga escenario desde archivo JSON."""
         ruta = Path(__file__).parent.parent.parent / "scenarios" / archivo_json
         
         if not ruta.exists():
@@ -159,10 +145,12 @@ class Menu:
         print("SIMULADOR DE COLISIONES EN 2D")
         print("="*60)
         print("\n¿Qué deseas hacer?")
-        print("\n📱 INTERFAZ TERMINAL (recomendado para PC bajo recursos):")
+        print("\nINTERFAZ TERMINAL (recomendado para PC bajo recursos):")
         print("  1. Simulación personalizada (ingresar tus propios datos)")
         print("  2. Cargar escenario desde JSON (con ejemplos presets)")
+        print("\nINTERFAZ GRÁFICA (recomendado para PC con buenos recursos):")
         print("  3. Interfaz del navegador (abre en tu navegador)")
+        print("\nSALIDA:")
         print("  4. Salir (cierra el programa)")
         print("\n" + "-"*60)
     
@@ -234,13 +222,9 @@ class Menu:
         print("=" * 60 + "\n")
         
         try:
-            # Ejecutar web.py en un subprocess
-            archivo_web = Path(__file__).parent.parent / "web_server.py"
-            # Pequeño delay para que el servidor esté listo
             time.sleep(1)
             webbrowser.open('http://127.0.0.1:5002')
             
-            # Ejecutar el servidor
             subprocess.run(
                 [sys.executable, str(Path(__file__).parent.parent.parent / "web.py")],
                 check=False

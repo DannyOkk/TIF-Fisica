@@ -1,6 +1,6 @@
 {
   "nombre": "Caso C: Examen - Una en reposo",
-  "descripcion": "Choque elástico: v1=12 m/s, v2=0 m/s → Esperado: vf1=4 m/s, vf2=16 m/s. Masas m1=4kg, m2=2kg, e=1.0",
+  "descripcion": "EJERCICIO EXAMEN (Caso C): Una partícula golpea a otra en reposo. Partícula roja (móvil): m₁=4kg, v₁=+12 m/s (desde x=3m). Partícula azul (reposo): m₂=2kg, v₂=0 m/s (desde x=7m). Choque elástico (e=1.0). CALCULAR: velocidades finales vf1 y vf2. VERIFICAR: conservación de momento y energía cinética. RESULTADO ESPERADO: vf1=4 m/s, vf2=16 m/s.",
   "dt": 0.01,
   "ancho_dominio": 10.0,
   "alto_dominio": 10.0,

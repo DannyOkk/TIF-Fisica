@@ -1,4 +1,4 @@
-"""Paquete vista: visualización."""
+"""Vista: capas de presentación y visualización."""
 
 from .visualizador import Visualizador
 

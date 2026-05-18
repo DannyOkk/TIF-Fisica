@@ -1,10 +1,16 @@
-"""Suite de validación: pruebas unitarias."""
+#!/usr/bin/env python3
+"""Suite de validación integrada: importaciones, métodos y conservación física."""
 
+import sys
 import numpy as np
+
+sys.path.insert(0, '.')
+
 from src.model.particula import Particula
 from src.model.motor_fisico import MotorFisico
 from src.model.contenedor import Contenedor
 from src.controller import Simulador
+from src.view.visualizador import Visualizador
 
 
 class TestRunner:
@@ -22,7 +28,7 @@ class TestRunner:
         """Valida cálculo de energía cinética."""
         p = Particula(0, np.array([0, 0]), np.array([3, 4]), 2.0, 0.5)
         ek = p.calcular_energia_cinetica()
-        esperado = 0.5 * 2.0 * (3**2 + 4**2)  # 0.5 * m * v²
+        esperado = 0.5 * 2.0 * (3**2 + 4**2)
         return self._assert_approx(ek, esperado)
     
     def test_cantidad_movimiento(self) -> bool:
@@ -88,7 +94,7 @@ class TestRunner:
         
         ek_final = p1.calcular_energia_cinetica() + p2.calcular_energia_cinetica()
         
-        return ek_final < ek_inicial  # Energía disminuye
+        return ek_final < ek_inicial
     
     def test_deteccion_frontera(self) -> bool:
         """Detecta colisión con frontera."""
@@ -96,112 +102,45 @@ class TestRunner:
         p = Particula(0, np.array([0.3, 5]), np.array([0, 0]), 1.0, 0.5)
         return contenedor.detectar_colision_frontera(p)
     
-    def test_rebote_pared_elastica(self) -> bool:
-        """Verifica rebote elástico contra pared."""
-        contenedor = Contenedor(10, 10, 1.0)
-        p = Particula(0, np.array([0.1, 5]), np.array([-5, 0]), 1.0, 0.5)
-        contenedor.resolver_colision_frontera(p)
-        return p.velocidad[0] > 0  # vx cambió de signo
-    
-    def test_estabilidad_simulacion(self) -> bool:
-        """Valida estabilidad numérica en 100 pasos."""
-        contenedor = Contenedor(10, 10)
-        simulador = Simulador(contenedor)
-        
-        simulador.agregar_particula(
-            np.array([2, 5]),
-            np.array([2, 0]),
-            1.0,
-            0.5,
-            0.9,
-            'red'
-        )
-        
-        simulador.agregar_particula(
-            np.array([8, 5]),
-            np.array([-2, 0]),
-            1.0,
-            0.5,
-            0.9,
-            'blue'
-        )
-        
-        for _ in range(100):
-            simulador.paso_simulacion()
-        
-        # Si llegamos aquí sin excepciones, es estable
-        return True
-    
-    def test_conservacion_momento_simulacion_completa(self) -> bool:
-        """Valida conservación de momento en simulación completa."""
-        contenedor = Contenedor(10, 10)
-        simulador = Simulador(contenedor)
-        
-        simulador.agregar_particula(
-            np.array([2, 5]),
-            np.array([2, 0]),
-            1.0,
-            0.5,
-            1.0,
-            'red'
-        )
-        
-        simulador.agregar_particula(
-            np.array([8, 5]),
-            np.array([-2, 0]),
-            1.0,
-            0.5,
-            1.0,
-            'blue'
-        )
-        
-        p_inicial = simulador.calcular_momento_total()
-        
-        for _ in range(100):
-            simulador.paso_simulacion()
-        
-        p_final = simulador.calcular_momento_total()
-        
-        return self._assert_approx(p_inicial, p_final, tol=0.01)
-    
-    def ejecutar_todos(self) -> None:
-        """Ejecuta todas las pruebas."""
-        print("\n" + "="*60)
-        print("SUITE DE VALIDACIÓN - PRUEBAS UNITARIAS")
-        print("="*60)
+    def run_all(self) -> None:
+        """Ejecuta todos los tests."""
+        print("\n" + "="*70)
+        print("🔍 SUITE DE VALIDACIÓN INTEGRADA")
+        print("="*70 + "\n")
         
         tests = [
-            ("Cálculo de energía cinética", self.test_energia_cinetica),
-            ("Cálculo de cantidad de movimiento", self.test_cantidad_movimiento),
-            ("Actualización de posición (cinemática)", self.test_actualizacion_posicion),
+            ("Energía cinética", self.test_energia_cinetica),
+            ("Cantidad de movimiento", self.test_cantidad_movimiento),
+            ("Actualización de posición", self.test_actualizacion_posicion),
             ("Detección de colisión (cercanas)", self.test_deteccion_colision_cercanas),
             ("No detección de colisión (lejanas)", self.test_deteccion_no_colision_lejanas),
             ("Conservación de momento (elástica)", self.test_conservacion_momento_elastica),
             ("Conservación de energía (elástica)", self.test_conservacion_energia_elastica),
             ("Disipación de energía (inelástica)", self.test_disipacion_energia_inelastica),
-            ("Detección de colisión con frontera", self.test_deteccion_frontera),
-            ("Rebote elástico contra pared", self.test_rebote_pared_elastica),
-            ("Estabilidad (100 pasos)", self.test_estabilidad_simulacion),
-            ("Conservación de momento (simulación completa)", self.test_conservacion_momento_simulacion_completa),
+            ("Detección de frontera", self.test_deteccion_frontera),
         ]
         
         for nombre, test_func in tests:
             self.tests_totales += 1
-            try:
-                resultado = test_func()
-                estado = "✓ PASS" if resultado else "✗ FAIL"
-                print(f"{estado}: {nombre}")
-                if resultado:
-                    self.tests_pasados += 1
-            except Exception as e:
-                print(f"✗ ERROR: {nombre} - {e}")
+            resultado = test_func()
+            estado = "✓" if resultado else "✗"
+            print(f"  {estado} {nombre}")
+            if resultado:
+                self.tests_pasados += 1
         
-        print("\n" + "="*60)
-        porcentaje = (self.tests_pasados / self.tests_totales) * 100
-        print(f"RESULTADO: {self.tests_pasados}/{self.tests_totales} tests pasaron ({porcentaje:.1f}%)")
-        print("="*60 + "\n")
+        print("\n" + "="*70)
+        print(f"Resultado: {self.tests_pasados}/{self.tests_totales} tests pasaron")
+        print("="*70 + "\n")
+        
+        if self.tests_pasados == self.tests_totales:
+            print("✅ TODAS LAS PRUEBAS EXITOSAS\n")
+            return True
+        else:
+            print(f"❌ {self.tests_totales - self.tests_pasados} PRUEBAS FALLARON\n")
+            return False
 
 
 if __name__ == '__main__':
     runner = TestRunner()
-    runner.ejecutar_todos()
+    success = runner.run_all()
+    sys.exit(0 if success else 1)

@@ -1,6 +1,6 @@
 {
   "nombre": "Múltiples Partículas",
-  "descripcion": "Sistema complejo con 5 partículas, múltiples colisiones. Coeficiente e=0.8",
+  "descripcion": "EJERCICIO: Sistema de 5 esferas en movimiento caótico dentro de un contenedor de 10×10 metros. Las partículas tienen masas y velocidades iniciales diferentes. Coeficiente de restitución e=0.8 para todas las colisiones. Simular el comportamiento del gas durante 500 pasos. Observar: colisiones partícula-partícula, rebotes contra paredes, distribución de velocidades (histograma Maxwell-Boltzmann), momento total, energía cinética total, y presión macroscópica.",
   "dt": 0.01,
   "ancho_dominio": 10.0,
   "alto_dominio": 10.0,

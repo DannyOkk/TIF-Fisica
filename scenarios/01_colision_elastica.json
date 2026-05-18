@@ -1,6 +1,6 @@
 {
   "nombre": "Colisión Elástica",
-  "descripcion": "Dos partículas con masas iguales, velocidades opuestas. Coeficiente de restitución e=1.0",
+  "descripcion": "EJERCICIO: Dos esferas de masas iguales (m=1kg cada una) chocan frontalmente. La partícula roja viaja a 3 m/s hacia la derecha desde x=3m. La partícula azul viaja a 2 m/s hacia la izquierda desde x=7m. El choque es perfectamente elástico (e=1.0). Verificar que se conservan el momento lineal y la energía cinética total del sistema.",
   "dt": 0.01,
   "ancho_dominio": 10.0,
   "alto_dominio": 10.0,

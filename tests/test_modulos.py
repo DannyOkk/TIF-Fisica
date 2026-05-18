@@ -20,11 +20,11 @@ print("="*70 + "\n")
 # ========== VERIFICACIÓN 1: Imports ==========
 print("✓ Fase 1: Verificando imports...")
 try:
-    from src.modelo.particula import Particula
-    from src.modelo.contenedor import Contenedor
-    from src.modelo.motor_fisico import MotorFisico
-    from src.controlador.simulador import Simulador
-    from src.vista.visualizador import Visualizador
+    from src.model.particula import Particula
+    from src.model.contenedor import Contenedor
+    from src.model.motor_fisico import MotorFisico
+    from src.controller.simulador import Simulador
+    from src.view.visualizador import Visualizador
     print("  ✓ Todos los módulos importados exitosamente\n")
 except ImportError as e:
     print(f"  ✗ Error de importación: {e}\n")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Punto de entrada principal del simulador."""
 
-from src.controlador.menu import Menu
+from src.controller.menu import Menu
 
 
 def main() -> None:

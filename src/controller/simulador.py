@@ -41,10 +41,10 @@ ejecutar(num_pasos, mostrar=True):
 
 import numpy as np
 from typing import List, Tuple
-from src.modelo.particula import Particula
-from src.modelo.motor_fisico import MotorFisico
-from src.modelo.contenedor import Contenedor
-from src.vista import Visualizador
+from src.model.particula import Particula
+from src.model.motor_fisico import MotorFisico
+from src.model.contenedor import Contenedor
+from src.view import Visualizador
 
 
 class Simulador:

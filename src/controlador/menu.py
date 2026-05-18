@@ -159,9 +159,11 @@ class Menu:
         print("SIMULADOR DE COLISIONES EN 2D")
         print("="*60)
         print("\n¿Qué deseas hacer?")
+        print("\n📱 INTERFAZ TERMINAL (recomendado para PC bajo recursos):")
         print("  1. Simulación personalizada (ingresar tus propios datos)")
         print("  2. Cargar escenario desde JSON (con ejemplos presets)")
-        print("  3. Salir (cierra el programa)")
+        print("  3. Interfaz del navegador (abre en tu navegador)")
+        print("  4. Salir (cierra el programa)")
         print("\n" + "-"*60)
     
     def procesar_opcion(self, opcion: str) -> None:
@@ -171,6 +173,8 @@ class Menu:
         elif opcion == '2':
             self._cargar_escenario_desde_menu()
         elif opcion == '3':
+            self._abrir_interfaz_navegador()
+        elif opcion == '4':
             print("\n✓ Gracias por usar el simulador. ¡Hasta pronto!")
             self.corriendo = False
         else:
@@ -209,6 +213,42 @@ class Menu:
         except ValueError:
             print("   ⚠️  Ingresa un número válido.")
     
+    def _abrir_interfaz_navegador(self) -> None:
+        """Abre la interfaz gráfica del navegador."""
+        import subprocess
+        import sys
+        import webbrowser
+        import time
+        
+        print("\n" + "="*60)
+        print("INTERFAZ DEL NAVEGADOR")
+        print("="*60)
+        print("\n🚀 Iniciando servidor web...")
+        print("📍 Abre tu navegador en: http://127.0.0.1:5002")
+        print("\n💡 Controles en el navegador:")
+        print("   - ⏵ Reproducir: Inicia la animación")
+        print("   - ⏸ Pausar: Pausa la animación")
+        print("   - 🎚️  Velocidad: Ajusta la velocidad de reproducción")
+        print("   - Selecciona escenarios desde el panel derecho")
+        print("\n⏱️  Abriendo navegador en 2 segundos...\n")
+        print("=" * 60 + "\n")
+        
+        try:
+            # Ejecutar web.py en un subprocess
+            archivo_web = Path(__file__).parent.parent / "web_server.py"
+            # Pequeño delay para que el servidor esté listo
+            time.sleep(1)
+            webbrowser.open('http://127.0.0.1:5002')
+            
+            # Ejecutar el servidor
+            subprocess.run(
+                [sys.executable, str(Path(__file__).parent.parent.parent / "web.py")],
+                check=False
+            )
+        except Exception as e:
+            print(f"❌ Error al abrir la interfaz del navegador: {e}")
+            print("   Intenta ejecutar: python web.py")
+    
     def ejecutar(self) -> None:
         """Loop principal que mantiene el programa corriendo."""
         print("\n" + "#"*60)
@@ -218,5 +258,5 @@ class Menu:
         
         while self.corriendo:
             self.mostrar_menu_principal()
-            opcion = input("Selecciona una opción (1-3): ").strip()
+            opcion = input("Selecciona una opción (1-4): ").strip()
             self.procesar_opcion(opcion)

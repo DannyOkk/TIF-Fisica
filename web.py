@@ -1,27 +1,19 @@
 #!/usr/bin/env python3
-"""Lanzador de interfaz web para el simulador de colisiones."""
+"""Servidor Flask para interfaz web del simulador de colisiones.
 
-import webbrowser
-import time
+Este script inicia el servidor web sin abrir automáticamente el navegador.
+El navegador se abre desde el menú principal del programa.
+"""
+
 from src.web_server import app
 
 if __name__ == '__main__':
     print("\n" + "="*60)
-    print("SIMULADOR DE COLISIONES 2D - INTERFAZ WEB")
+    print("SERVIDOR WEB - SIMULADOR DE COLISIONES 2D")
     print("="*60)
-    print("\n🚀 Iniciando servidor Flask...")
-    print("📍 Abre tu navegador en: http://127.0.0.1:5002")
-    print("\n💡 Controles:")
-    print("   - ⏵ Reproducir: Inicia la animación")
-    print("   - ⏸ Pausar: Pausa la animación")
-    print("   - ⏮ Anterior / ⏭ Siguiente: Navega frame a frame")
-    print("   - Velocidad: Acelera o desacelera la reproducción")
-    print("   - Ir a paso: Salta a cualquier frame")
+    print("\n✓ Servidor ejecutándose en: http://127.0.0.1:5002")
+    print("✓ Puedes cerrar este servidor con: Ctrl+C")
     print("\n" + "="*60 + "\n")
     
-    # Abrir navegador automáticamente
-    time.sleep(1)
-    webbrowser.open('http://127.0.0.1:5002')
-    
     # Ejecutar servidor
-    app.run(debug=False, host='127.0.0.1', port=5002)
+    app.run(debug=False, host='127.0.0.1', port=5002, use_reloader=False)
